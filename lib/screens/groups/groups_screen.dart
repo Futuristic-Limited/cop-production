@@ -269,8 +269,24 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(group.name,
-                          style: TextStyle(fontSize: 16, color: Colors.black)),
+                      // Wrap name in GestureDetector, passing group.toJson()
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/group-detail',
+                            arguments: {'group': group.toJson()},
+                          );
+                        },
+                        child: Text(
+                          group.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         group.description,

@@ -25,7 +25,7 @@ class Group {
     return Group(
       id: int.tryParse(json['group_id'].toString()) ?? 0,
       name: json['group_name'] ?? '',
-      description: '', // Not available in this response
+      description: json['group_description'], // Not available in this response
       avatarUrl: json['group_image'],
       dateCreated: json['date_created'],
       lastActive: null,
@@ -33,5 +33,19 @@ class Group {
       status: null,
       isMember: true,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'avatarUrl': avatarUrl,
+      'lastActive': lastActive,
+      'memberCount': memberCount,
+      'status': status,
+      'isMember': isMember,
+      'dateCreated': dateCreated,
+    };
   }
 }
