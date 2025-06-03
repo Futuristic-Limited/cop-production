@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "234826054071",
+    "project_id": "app-cop",
+    "storage_bucket": "app-cop.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:234826054071:android:ab29e370396feecf16d032",
+        "android_client_info": {
+          "package_name": "com.aphrc.futuristic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1v7xCmMftmkKWMbfGuOiSDGoVPherg_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

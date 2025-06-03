@@ -1,0 +1,200 @@
+import 'dart:convert';
+import 'package:APHRC_COP/models/message_model.dart';
+import 'package:APHRC_COP/screens/messages/chat_screen.dart';
+import 'package:APHRC_COP/screens/messages/lottie.dart';
+import 'package:APHRC_COP/screens/messages/new_conversation.dart';
+import 'package:APHRC_COP/services/shared_prefs_service.dart';
+import 'package:APHRC_COP/utils/format_time_utils.dart';
+import 'package:APHRC_COP/utils/html_utils.dart';
+import 'package:APHRC_COP/utils/uppercase_first_letter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+
+class MessagesScreen extends StatefulWidget {
+  const MessagesScreen({super.key});
+
+  // init state
+
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  List<MessageThread> threads = [];
+  bool isLoading = true;
+  String? errorMessage;
+  String? user;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchInbox();
+  }
+
+  Future<void> fetchInbox() async {
+    final token = await SharedPrefsService.getAccessToken();
+    final userId = await SharedPrefsService.getUserId();
+    final apiUrl = dotenv.env['API_URL'];
+
+    if (token == null) {
+      setState(() {
+        isLoading = false;
+        errorMessage = "Access token not found.";
+      });
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/messages/fetch_inbox/$userId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final Map<String, dynamic> nestedThreads = data['threads'];
+        final List<dynamic> threadList = nestedThreads['threads'];
+        final String userIdStr = nestedThreads['userId'].toString();
+
+        setState(() {
+          threads =
+              threads =
+              threadList
+                  .map((json) => MessageThread.fromJson(json))
+                  .toList();
+          user = userIdStr;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          errorMessage = "Failed to fetch inbox (${response.statusCode})";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = "Error fetching inbox: $e";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Messages')),
+      body:
+      isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Color.fromARGB(255, 28, 196, 107),
+          ),
+        ),
+      )
+          : errorMessage != null
+          ? Center(child: Text(errorMessage!))
+          : threads.isEmpty
+          ? LottieEmpty(title: 'Start a conversation!')
+          : ListView.builder(
+        itemCount: threads.length,
+        itemBuilder: (context, index) {
+          final thread = threads[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: NetworkImage(
+                thread.participantAvatar ?? '',
+              ),
+            ),
+            title: Text(capitalizeFirstLetter(thread.participantName)),
+            subtitle: Text(
+              stripHtml(thread.latestMessage),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatTime(thread.latestDateSent),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Icon(Icons.chat_bubble_outline),
+                    if (thread.unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 20,
+                            minHeight: 20,
+                          ),
+                          child: Text(
+                            '${thread.unreadCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => ThreadScreen(
+                    threadId: thread.threadId,
+                    userId: int.parse(user!),
+                    userName: thread.participantName,
+                    profilePicture: thread.participantAvatar ?? '',
+                  ),
+                ),
+              );
+              if (result == 'refresh') {
+                // Refresh the inbox if the user sent a new message
+                fetchInbox();
+              }
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.message, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+              const NewMessageScreen(title: 'New Conversation'),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

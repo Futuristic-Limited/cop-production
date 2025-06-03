@@ -1,0 +1,1 @@
+// Widget to show user avatar
