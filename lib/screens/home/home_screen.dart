@@ -70,18 +70,20 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoggedIn: isLoggedIn,
         onLogout: _handleLogout,
       ),
-      body: _selectedIndex == 0
-          ? Column(
-        children: [
-          SizedBox(
-            height: 200,
-            child: CarouselSlider(
-              options: CarouselOptions(
-                autoPlay: true,
-                enlargeCenterPage: true,
-                viewportFraction: 1.0,
-                aspectRatio: 16 / 9,
-              ),
+    body: _selectedIndex == 0
+    ? Padding(
+    padding: const EdgeInsets.only(top: 16.0),
+    child: Column(
+    children: [
+    SizedBox(
+    height: 200,
+    child: CarouselSlider(
+    options: CarouselOptions(
+    autoPlay: true,
+    enlargeCenterPage: true,
+    viewportFraction: 1.0,
+    aspectRatio: 16 / 9,
+    ),
               items: bannerImages.map((imagePath) {
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -94,14 +96,15 @@ class _HomeScreenState extends State<HomeScreen> {
               }).toList(),
             ),
           ),
+
           const SizedBox(height: 10),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             width: double.infinity,
             child: Card(
-              color: const Color(0xBE030200),
+              color: const Color(0xFFFFDD00),
               elevation: 4,
-              shadowColor: const Color(0xFFFFFFFF).withOpacity(0.5),
+              shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -112,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF7BC148),
+                    color: Color(0xFFFFFFFF),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -137,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+        )
       )
           : _screens[_selectedIndex],
       bottomNavigationBar: CustomBottomNavBar(
