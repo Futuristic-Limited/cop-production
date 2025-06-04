@@ -23,7 +23,9 @@ class _VerifyResetOtpScreenState extends State<VerifyResetOtpScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    email = Uri.decodeFull(ModalRoute.of(context)?.settings.arguments as String? ?? '');
+    email = Uri.decodeFull(
+      ModalRoute.of(context)?.settings.arguments as String? ?? '',
+    );
   }
 
   Future<void> _verifyOtp() async {
@@ -41,10 +43,7 @@ class _VerifyResetOtpScreenState extends State<VerifyResetOtpScreen> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'email': email,
-          'otp': otp,
-        },
+        body: {'email': email, 'otp': otp},
       );
 
       final data = jsonDecode(response.body);
@@ -100,10 +99,7 @@ class _VerifyResetOtpScreenState extends State<VerifyResetOtpScreen> {
                 const SizedBox(height: 25),
                 _isVerifying
                     ? const CircularProgressIndicator(color: apHrcGreen)
-                    : MyButton(
-                  text: 'Verify OTP',
-                  onPressed: _verifyOtp,
-                ),
+                    : MyButton(text: 'Verify OTP', onPressed: _verifyOtp),
               ],
             ),
           ),
