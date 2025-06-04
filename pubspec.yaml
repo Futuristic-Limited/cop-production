@@ -49,7 +49,7 @@ dependencies:
   lottie: ^3.3.1
   cached_network_image: ^3.4.1
   json_annotation: ^4.8.1
-  gallery_saver: any
+  # gallery_saver: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -74,8 +74,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
 
-dependency_overrides:
-  http: ^1.4.0 # Force all packages to use this version
+# dependency_overrides:
+#   http: ^1.4.0 # Force all packages to use this version
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
