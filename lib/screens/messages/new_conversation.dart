@@ -156,96 +156,98 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
     return Scaffold(
       appBar: AppBar(
         title:
-        _isSearching
-            ? TextField(
-          controller: _searchController,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Search users...',
-            border: InputBorder.none,
-            hintStyle: TextStyle(
-              color: Color.fromARGB(137, 11, 11, 11),
-            ),
-          ),
-          style: const TextStyle(
-            color: Color.fromARGB(255, 6, 6, 6),
-            fontSize: 18,
-          ),
-          cursorColor: const Color.fromARGB(255, 10, 10, 10),
-        )
-            : Text(widget.title ?? 'New Conversation'),
+            _isSearching
+                ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search users...',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color: Color.fromARGB(137, 11, 11, 11),
+                    ),
+                  ),
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 6, 6, 6),
+                    fontSize: 18,
+                  ),
+                  cursorColor: const Color.fromARGB(255, 10, 10, 10),
+                )
+                : Text(widget.title ?? 'New Conversation'),
         actions: [
           _isSearching
               ? IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: _stopSearch,
-          )
+                icon: const Icon(Icons.close),
+                onPressed: _stopSearch,
+              )
               : IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _startSearch,
-          ),
+                icon: const Icon(Icons.search),
+                onPressed: _startSearch,
+              ),
         ],
       ),
       body:
-      _isLoading
-          ? const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(255, 28, 196, 107),
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Searching users...',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-          ],
-        ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(8),
-        itemCount: _filteredUsers.length,
-        itemBuilder: (context, index) {
-          final user = _filteredUsers[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(user.senderAvatar),
-            ),
-            title: Text(user.fullName),
-            onTap: () async {
-              final user1 = await SharedPrefsService.getUserId();
-              if (user1 == null) {
-                // Handle null case
-                return;
-              }
-
-              final threadId = await fetchThread(
-                int.parse(user1),
-                int.parse(user.id),
-              );
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => ThreadScreen(
-                    threadId:
-                    threadId?.toString(), // new conversation
-                    userId: int.parse(user.id),
-                    profilePicture: user.senderAvatar,
-                    userName: user.fullName,
-                  ),
+          _isLoading
+              ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color.fromARGB(255, 28, 196, 107),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Searching users...',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              );
-            },
-          );
-        },
-      ),
+              )
+              : ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: _filteredUsers.length,
+                itemBuilder: (context, index) {
+                  final user = _filteredUsers[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(user.senderAvatar),
+                    ),
+                    title: Text(user.fullName),
+                    onTap: () async {
+                      final user1 = await SharedPrefsService.getUserId();
+                      if (user1 == null) {
+                        // Handle null case
+                        return;
+                      }
+
+                      final threadId = await fetchThread(
+                        int.parse(user1),
+                        int.parse(user.id),
+                      );
+
+                      print('Thread ID: $threadId');
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => BuddyBossThreadScreen(
+                                threadId: int.parse(
+                                  threadId ?? '0',
+                                ), // new conversation
+                                userId: int.parse(user.id),
+                                profilePicture: user.senderAvatar,
+                                userName: user.fullName,
+                              ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
     );
   }
 }
-

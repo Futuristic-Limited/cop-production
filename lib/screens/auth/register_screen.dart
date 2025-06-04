@@ -24,7 +24,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isPasswordVisible = false;
   bool isLoading = false;
 
-  Future<void> registerUser(String fullName, String email, String password) async {
+  Future<void> registerUser(
+    String fullName,
+    String email,
+    String password,
+  ) async {
     setState(() => isLoading = true);
     var url = Uri.parse('$apiUrl/register');
 
@@ -44,7 +48,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Fluttertoast.showToast(msg: "Registration successful!");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => VerifyOtpScreen(email: email)),
+          MaterialPageRoute(
+            builder:
+                (context) => VerifyOtpScreen(email: email, password: password),
+          ),
         );
       } else {
         Fluttertoast.showToast(msg: data['message'] ?? "Registration failed.");
@@ -62,12 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: apHrcGreen,
-
-
-        elevation: 2,
-      ),
+      appBar: AppBar(backgroundColor: apHrcGreen, elevation: 2),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -116,8 +118,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
-                    fillColor: Color(0xFFF6FFF1), // Light APHRC green background to match other fields
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    fillColor: Color(
+                      0xFFF6FFF1,
+                    ), // Light APHRC green background to match other fields
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 20,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
@@ -134,7 +141,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: apHrcGreen,
                       ),
                       onPressed: () {
@@ -149,23 +158,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 isLoading
                     ? const CircularProgressIndicator()
                     : MyButton(
-                  text: 'Sign Up',
-                  onPressed: () {
-                    String fullName = fullNameController.text.trim();
-                    String email = emailController.text.trim();
-                    String password = passwordController.text.trim();
+                      text: 'Sign Up',
+                      onPressed: () {
+                        String fullName = fullNameController.text.trim();
+                        String email = emailController.text.trim();
+                        String password = passwordController.text.trim();
 
-                    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
-                      Fluttertoast.showToast(msg: 'Please fill in all fields');
-                    } else if (!email.contains('@')) {
-                      Fluttertoast.showToast(msg: 'Enter a valid email');
-                    } else if (password.length < 6) {
-                      Fluttertoast.showToast(msg: 'Password must be at least 6 characters');
-                    } else {
-                      registerUser(fullName, email, password);
-                    }
-                  },
-                ),
+                        if (fullName.isEmpty ||
+                            email.isEmpty ||
+                            password.isEmpty) {
+                          Fluttertoast.showToast(
+                            msg: 'Please fill in all fields',
+                          );
+                        } else if (!email.contains('@')) {
+                          Fluttertoast.showToast(msg: 'Enter a valid email');
+                        } else if (password.length < 6) {
+                          Fluttertoast.showToast(
+                            msg: 'Password must be at least 6 characters',
+                          );
+                        } else {
+                          registerUser(fullName, email, password);
+                        }
+                      },
+                    ),
 
                 const SizedBox(height: 20),
                 Row(

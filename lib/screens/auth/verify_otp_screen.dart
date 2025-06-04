@@ -10,17 +10,24 @@ import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+final buddyBossApiUrl = dotenv.env['WP_API_URL'] ?? 'http://10.0.2.2:8000';
 
 class VerifyOtpScreen extends StatefulWidget {
-  final String email;
+  const VerifyOtpScreen({
+    super.key,
+    required this.email,
+    required this.password,
+  });
 
-  const VerifyOtpScreen({super.key, required this.email});
+  final String email;
+  final String password;
 
   @override
   State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
-class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProviderStateMixin {
+class _VerifyOtpScreenState extends State<VerifyOtpScreen>
+    with SingleTickerProviderStateMixin {
   final otpController = TextEditingController();
   bool _isLoading = false;
   int _resendCooldown = 0;
@@ -32,7 +39,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-
     // Animation setup for zoom-out effect
     _animationController = AnimationController(
       vsync: this,
@@ -54,13 +60,39 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
     super.dispose();
   }
 
+  Future<void> _generateBuddyOtp() async {
+    try {
+      var url = Uri.parse('${buddyBossApiUrl}wp-json/jwt-auth/v1/token');
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': widget.email,
+          'password': widget.password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await SaveAccessTokenService.saveBuddyBossToken(data['token']);
+      } else {
+        return;
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error generating OTP: $e");
+    }
+  }
+
   Future<void> _verifyOtp() async {
     String otp = otpController.text.trim();
 
+    print('password: ${widget.password}');
+    print('email: ${widget.email}');
+
     if (otp.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the OTP')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter the OTP')));
       return;
     }
 
@@ -80,16 +112,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-          'otp': otp,
-        }),
+        body: jsonEncode({'email': widget.email, 'otp': otp}),
       );
 
       var data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
         Fluttertoast.showToast(msg: "OTP verified successfully!");
+
+        _generateBuddyOtp();
 
         // Save session data
         await SharedPrefsService.saveUserSession(
@@ -98,12 +129,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
           tokenExpiresAt: data['tokens']['token_expires_at'] ?? '',
           userName: data['user_name'] ?? '',
           userId: data['user_id'].toString(),
+          buddyBossToken: data['token'] ?? '',
         );
         // Save the access token to SharedPreferences
         await SaveAccessTokenService.saveAccessToken(
           data['tokens']['access_token'],
         );
-
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         Fluttertoast.showToast(
@@ -183,7 +214,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
         foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 1,
-
       ),
       body: SafeArea(
         child: Center(
@@ -265,14 +295,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
                 // Verify button or loader
                 SizedBox(
                   width: double.infinity,
-                  child: _isLoading
-                      ? const Center(
-                    child: CircularProgressIndicator(color: apHrcGreen),
-                  )
-                      : MyButton(
-                    text: 'Verify',
-                    onPressed: _verifyOtp,
-                  ),
+                  child:
+                      _isLoading
+                          ? const Center(
+                            child: CircularProgressIndicator(color: apHrcGreen),
+                          )
+                          : MyButton(text: 'Verify', onPressed: _verifyOtp),
                 ),
 
                 const SizedBox(height: 30),
@@ -286,7 +314,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
                       style: TextStyle(fontSize: 14),
                     ),
                     GestureDetector(
-                      onTap: (_isLoading || _resendCooldown > 0) ? null : _resendOtp,
+                      onTap:
+                          (_isLoading || _resendCooldown > 0)
+                              ? null
+                              : _resendOtp,
                       child: Text(
                         _resendCooldown > 0
                             ? 'Resend in $_resendCooldown s'
@@ -294,9 +325,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: (_isLoading || _resendCooldown > 0)
-                              ? Colors.grey
-                              : apHrcGreen,
+                          color:
+                              (_isLoading || _resendCooldown > 0)
+                                  ? Colors.grey
+                                  : apHrcGreen,
                         ),
                       ),
                     ),
@@ -309,11 +341,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
                     style: TextButton.styleFrom(
                       foregroundColor: apHrcGreen,
                       textStyle: const TextStyle(
