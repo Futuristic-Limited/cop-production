@@ -1,6 +1,7 @@
 class Group {
   final int id;
   final String name;
+  final String slug;
   final String description;
   final String? avatarUrl;
   final String? lastActive;
@@ -12,6 +13,7 @@ class Group {
   Group({
     required this.id,
     required this.name,
+    required this.slug,
     required this.description,
     this.avatarUrl,
     this.lastActive,
@@ -25,6 +27,7 @@ class Group {
     return Group(
       id: int.tryParse(json['group_id'].toString()) ?? 0,
       name: json['group_name'] ?? '',
+      slug: json['group_slug'] ?? '',
       description: json['group_description'], // Not available in this response
       avatarUrl: json['group_image'],
       dateCreated: json['date_created'],
@@ -39,6 +42,7 @@ class Group {
     return {
       'id': id,
       'name': name,
+      'slug': slug,
       'description': description,
       'avatarUrl': avatarUrl,
       'lastActive': lastActive,
