@@ -13,6 +13,8 @@ import 'screens/auth/reset_password_screen.dart';
 //import 'screens/home/landing_page.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
+import 'screens/events/events_page.dart';
+import 'screens/community_guidelines/community_guidelines_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -22,9 +24,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'APHRC COP',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-      ),
+      theme: ThemeData(primarySwatch: Colors.indigo),
       home: const AnimatedSplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
@@ -36,11 +36,12 @@ class MyApp extends StatelessWidget {
         '/courses': (context) => const CoursesScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/notifications': (context) => const NotificationsScreen(),
-       // '/landing': (context) => const LandingPage(),
+        // '/landing': (context) => const LandingPage(),
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
-
+        '/events': (context) => const EventsPage(),
+        '/guidelines': (context) => const CommunityGuidelinesPage(),
       },
     );
   }

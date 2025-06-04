@@ -59,6 +59,13 @@ class AppDrawer extends StatelessWidget {
                   context,
                   '/register',
                 ),
+                _buildDrawerItem(Icons.event, 'Events', context, '/events'),
+                _buildDrawerItem(
+                  Icons.rule,
+                  'Community Guidelines',
+                  context,
+                  '/guidelines',
+                ),
               ],
             ),
           ),

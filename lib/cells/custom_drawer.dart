@@ -49,7 +49,9 @@ class CustomDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children:
-              isLoggedIn ? _buildLoggedInItems(context) : _buildGuestItems(context),
+                  isLoggedIn
+                      ? _buildLoggedInItems(context)
+                      : _buildGuestItems(context),
             ),
           ),
         ],
@@ -60,18 +62,22 @@ class CustomDrawer extends StatelessWidget {
   List<Widget> _buildLoggedInItems(BuildContext context) {
     return [
       _drawerItem(context, Icons.home, 'Home', '/home'),
+      // _drawerItem(context, Icons.event, 'Events', '/events'),
+      // _drawerItem(context, Icons.rule, 'Guidelines', '/guidelines'),
       _drawerItem(context, Icons.settings, 'Settings', '/settings'),
-      _drawerItem(context, Icons.notifications, 'Notifications', '/notifications'),
+      _drawerItem(
+        context,
+        Icons.notifications,
+        'Notifications',
+        '/notifications',
+      ),
       _drawerItem(context, Icons.group, 'Groups', '/groups'),
       _drawerItem(context, Icons.message, 'Messages', '/messages'),
       _drawerItem(context, Icons.email, 'Email Invite', '/email_invites'),
       _drawerItem(context, Icons.person, 'Profile', '/profile'),
       ListTile(
         leading: const Icon(Icons.logout, color: Colors.red),
-        title: const Text(
-          'Logout',
-          style: TextStyle(fontSize: 16),
-        ),
+        title: const Text('Logout', style: TextStyle(fontSize: 16)),
         onTap: () async {
           Navigator.pop(context); // Close drawer first
           await SharedPrefsService.logout();
@@ -88,7 +94,12 @@ class CustomDrawer extends StatelessWidget {
     ];
   }
 
-  Widget _drawerItem(BuildContext context, IconData icon, String title, String routeName) {
+  Widget _drawerItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String routeName,
+  ) {
     return ListTile(
       leading: Icon(icon, color: Colors.green),
       title: Text(title, style: const TextStyle(fontSize: 16)),
