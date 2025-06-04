@@ -1,210 +1,264 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:html_unescape/html_unescape.dart';
+import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+// Models
+import 'package:APHRC_COP/models/buddyboss_thread.dart';
 import 'package:APHRC_COP/models/message_model.dart';
-import 'package:APHRC_COP/screens/messages/chart_input_field.dart';
+
+// Services
+import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
+
+// Utils
 import 'package:APHRC_COP/utils/format_time_utils.dart';
 import 'package:APHRC_COP/utils/html_utils.dart';
 import 'package:APHRC_COP/utils/uppercase_first_letter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+// Widgets
+import 'package:APHRC_COP/screens/messages/chart_input_field.dart';
 
 final apiUrl = dotenv.env['API_URL'];
+final buddyBossApiUrl = dotenv.env['WP_API_URL'];
 
-class ThreadScreen extends StatefulWidget {
-  const ThreadScreen({
+class BuddyBossThreadScreen extends StatefulWidget {
+  const BuddyBossThreadScreen({
     super.key,
-    this.threadId,
+    required this.threadId,
     required this.userId,
     required this.profilePicture,
     required this.userName,
   });
 
-  final String? threadId;
+  final int threadId;
   final int userId;
   final String profilePicture;
   final String userName;
 
   @override
-  State<ThreadScreen> createState() => _ThreadScreenState();
+  State<BuddyBossThreadScreen> createState() => _BuddyBossThreadScreenState();
 }
 
-class _ThreadScreenState extends State<ThreadScreen> {
-  List<Message> dummyMessages = [];
+class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
+  final _scrollController = ScrollController();
   bool isLoading = true;
   String? errorMessage;
+  BuddyBossThread? thread;
+  String? _accessToken;
+  final HtmlUnescape _htmlUnescape = HtmlUnescape();
 
   @override
   void initState() {
     super.initState();
-    fetchMessages();
+    _fetchThread();
   }
 
-  Future<void> fetchMessages() async {
-    final token = await SaveAccessTokenService.getAccessToken();
-
-    if (widget.threadId == null) {
-      setState(() {
-        isLoading = false;
-        dummyMessages = [];
-      });
-      return; // No messages yet since thread doesn't exist
-    }
-
-    if (token == null) {
-      setState(() {
-        isLoading = false;
-        errorMessage = "Access token not found.";
-      });
-      return;
-    }
-
+  Future<void> _fetchThread() async {
     try {
+      final token = await SaveAccessTokenService.getBuddyToken();
+
+      print('BuddyBoss Token: $token');
+
+      if (token != null) {
+        setState(() {
+          _accessToken = token;
+        });
+      }
+
       final response = await http.get(
         Uri.parse(
-          '$apiUrl/messages/thread/${widget.threadId}/user/${widget.userId}',
+          '${buddyBossApiUrl}wp-json/buddyboss/v1/messages/${widget.threadId}',
         ),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
         },
       );
+
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
         setState(() {
-          dummyMessages =
-              (jsonData['thread'] as List)
-                  .map((item) => Message.fromJson(item))
-                  .toList();
+          thread = BuddyBossThread.fromJson(json.decode(response.body));
           isLoading = false;
-          errorMessage = null;
         });
+        _scrollToBottom();
       } else {
-        print(
-          'Failed to fetch messages: ${response.statusCode} - ${response.body}',
-        );
         setState(() {
+          errorMessage = 'Failed to load thread: ${response.statusCode}';
           isLoading = false;
-          errorMessage = "Failed to fetch inbox (${response.statusCode})";
         });
       }
     } catch (e) {
       setState(() {
+        errorMessage = 'Error: $e';
         isLoading = false;
-        errorMessage = "Error fetching inbox: $e";
       });
     }
   }
 
-  final ScrollController _scrollController = ScrollController();
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
-  Future<void> sendMessage(String messageText) async {
-    final token = await SaveAccessTokenService.getAccessToken();
-    final prefs = await SharedPreferences.getInstance();
-    final chartUserId = prefs.getInt('chartUserId');
-    if (token == null) return;
+  Future<void> _sendMessage(String messageText) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getInt('chartUserId');
 
-    // If threadId is null, create a new thread
-    String? threadId = widget.threadId;
-    if (threadId == null) {
       final response = await http.post(
-        Uri.parse('$apiUrl/messages/send'),
+        Uri.parse('${buddyBossApiUrl}wp-json/buddyboss/v1/messages'),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $_accessToken',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'recipient_ids': [widget.userId],
-          'sender_id': chartUserId,
+        body: json.encode({
+          'thread_id': widget.threadId,
           'message': messageText,
+          'sender_id': currentUserId,
+          'recipients': [widget.userId],
         }),
+      );
+      if (response.statusCode == 200) {
+        // Refresh the thread after sending
+        await _fetchThread();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to send message')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  String _stripHtml(String html) {
+    return _htmlUnescape.convert(html.replaceAll(RegExp(r'<[^>]*>'), ''));
+  }
+
+  Future<void> _downloadImage(String url, BuildContext context) async {
+    // State variable to track download progress
+    bool isDownloading = true;
+    bool success = false;
+    String? savedFilePath;
+
+    try {
+      // Show initial loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Downloading image...',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+      );
+
+      // Check and request storage permission (Android)
+      if (Platform.isAndroid) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          throw Exception('Storage permission denied');
+        }
+      }
+
+      // Get the image data with progress tracking
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $_accessToken'},
       );
 
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        threadId =
-            jsonData['thread_id']
-                .toString(); // Update with actual response field
+        // Get downloads directory (permanent storage)
+        final directory =
+            Platform.isAndroid
+                ? await getExternalStorageDirectory()
+                : await getApplicationDocumentsDirectory();
 
-        setState(() {
-          dummyMessages.add(
-            Message(
-              id: '',
-              threadId: threadId ?? '',
-              senderId: widget.userId.toString(),
-              subject: '',
-              message: messageText,
-              dateSent: DateTime.now().toIso8601String(),
-              isDeleted: '0',
-              attachments: [],
-            ),
-          );
-        });
+        if (directory == null) throw Exception('Could not access storage');
+
+        // Create better filename with timestamp
+        final fileExtension = url.split('.').last;
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName =
+            'image_$timestamp.${fileExtension.contains('?') ? fileExtension.split('?').first : fileExtension}';
+        final filePath = '${directory.path}/$fileName';
+
+        // 5. Save the file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+        savedFilePath = filePath;
+
+        // 6. Save to gallery (optional)
+        try {
+          await GallerySaver.saveImage(filePath);
+        } catch (e) {
+          debugPrint('Could not save to gallery: $e');
+        }
+
+        success = true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to create thread, please try again later.',
-              style: TextStyle(fontSize: 14),
-            ),
-          ),
-        );
-
-        return;
+        throw Exception('Server returned status code ${response.statusCode}');
       }
-    } else {
-      // Send message to existing thread
-      final response = await http.post(
-        Uri.parse('$apiUrl/messages/reply_thread'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'thread_id': threadId,
-          'sender_id': chartUserId,
-          'recipient_ids': [widget.userId],
-          'message': messageText,
-        }),
+    } catch (e) {
+      debugPrint('Download error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
+    } finally {
+      // Dismiss loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
 
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        threadId = jsonData['message_id'].toString();
-
-        setState(() {
-          dummyMessages.add(
-            Message(
-              id: '',
-              threadId: threadId ?? '',
-              senderId: widget.userId.toString(),
-              subject: '',
-              message: messageText,
-              dateSent: DateTime.now().toIso8601String(),
-              isDeleted: '0',
-              attachments: [],
+        if (success && context.mounted) {
+          // Show success message with option to open file
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Image downloaded successfully!'),
+              action: SnackBarAction(
+                label: 'OPEN',
+                onPressed: () {
+                  if (savedFilePath != null) {
+                    OpenFile.open(savedFilePath);
+                  }
+                },
+              ),
+              duration: const Duration(seconds: 4),
             ),
           );
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to reply to thread, please try again later.',
-              style: TextStyle(fontSize: 14),
-            ),
-          ),
-        );
-
-        print(
-          'Failed to create thread: ${response.statusCode} - ${response.body}',
-        );
-        return;
+        }
       }
+      isDownloading = false;
     }
   }
 
@@ -228,191 +282,210 @@ class _ThreadScreenState extends State<ThreadScreen> {
             ),
           ],
         ),
-
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, 'refresh');
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, 'refresh'),
         ),
       ),
       body:
-      isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : Column(
-        children: [
-          // Scrollable message list
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              itemCount: dummyMessages.length,
-              itemBuilder: (context, index) {
-                final message = dummyMessages[index];
-                final isSentByUser =
-                    message.senderId.toString() ==
-                        widget.userId.toString();
-                final time = message.dateSent;
-                final text = message.message;
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : Column(
+                children: [
+                  // Message List
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      itemCount: thread?.messages.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final message = thread!.messages[index];
+                        final isSentByUser = message.senderId == widget.userId;
+                        final sender =
+                            thread!.recipients[message.senderId.toString()];
 
-                return Align(
-                  alignment:
-                  isSentByUser
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 3),
-                    padding: const EdgeInsets.all(5),
-                    constraints: BoxConstraints(
-                      maxWidth:
-                      MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                      isSentByUser
-                          ? const Color(0xFF7BC148)
-                          : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Attachments
-                        if (message.attachments.isNotEmpty)
-                          ...message.attachments.map((attachment) {
-                            final isImage = attachment.mimeType
-                                .startsWith('image/');
-                            final isPdf =
-                                attachment.mimeType ==
-                                    'application/pdf';
-
-                            return Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                        return Align(
+                          alignment:
+                              isSentByUser
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            padding: const EdgeInsets.all(12),
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.75,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isSentByUser
+                                      ? const Color(0xFF7BC148)
+                                      : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Attachments (Photos)
+                                if (message.bpMediaIds != null &&
+                                    message.bpMediaIds!.isNotEmpty)
+                                  Column(
+                                    children:
+                                        message.bpMediaIds!.map((media) {
+                                          return Column(
+                                            children: [
+                                              const SizedBox(height: 6),
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: SizedBox(
+                                                  height: 120, // Fixed height
+                                                  width:
+                                                      double
+                                                          .infinity, // Full width
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder:
+                                                              (
+                                                                context,
+                                                              ) => Scaffold(
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .black,
+                                                                body: Stack(
+                                                                  children: [
+                                                                    Positioned.fill(
+                                                                      child: PhotoView(
+                                                                        imageProvider: NetworkImage(
+                                                                          media
+                                                                              .url!,
+                                                                          headers: {
+                                                                            'Authorization':
+                                                                                'Bearer $_accessToken',
+                                                                          },
+                                                                        ),
+                                                                        minScale:
+                                                                            PhotoViewComputedScale.contained,
+                                                                        maxScale:
+                                                                            PhotoViewComputedScale.covered *
+                                                                            2,
+                                                                        backgroundDecoration: const BoxDecoration(
+                                                                          color:
+                                                                              Colors.black,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    Positioned(
+                                                                      top:
+                                                                          MediaQuery.of(
+                                                                            context,
+                                                                          ).padding.top,
+                                                                      right: 16,
+                                                                      child: Row(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          // Download Button
+                                                                          IconButton(
+                                                                            icon: const Icon(
+                                                                              Icons.download,
+                                                                              color:
+                                                                                  Colors.white,
+                                                                            ),
+                                                                            onPressed:
+                                                                                () => _downloadImage(
+                                                                                  media.url!,
+                                                                                  context,
+                                                                                ),
+                                                                          ),
+                                                                          // Close Button
+                                                                          IconButton(
+                                                                            icon: const Icon(
+                                                                              Icons.close,
+                                                                              color:
+                                                                                  Colors.white,
+                                                                            ),
+                                                                            onPressed:
+                                                                                () => Navigator.pop(
+                                                                                  context,
+                                                                                ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: Image.network(
+                                                      media.url!,
+                                                      headers: {
+                                                        'Authorization':
+                                                            'Bearer $_accessToken',
+                                                      },
+                                                      fit: BoxFit.cover,
+                                                      height: 150,
+                                                      width: double.infinity,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                  ),
+
+                                // Message Text
+                                if (message.message.rendered.isNotEmpty)
+                                  Text(
+                                    _stripHtml(message.message.rendered),
+                                    style: TextStyle(
+                                      color:
+                                          isSentByUser
+                                              ? Colors.white
+                                              : Colors.black,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+
                                 const SizedBox(height: 6),
-                                if (isImage)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(
-                                      8,
+
+                                // Time
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    formatTimeHumanReadable(message.dateSent),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color:
+                                          isSentByUser
+                                              ? Colors.white70
+                                              : Colors.black54,
                                     ),
-                                    child: CachedNetworkImage(
-                                      imageUrl: attachment.downloadUrl,
-                                      height: 50,
-                                      width: 50,
-                                      fit: BoxFit.cover,
-                                      placeholder:
-                                          (
-                                          context,
-                                          url,
-                                          ) => const SizedBox(
-                                        height: 10,
-                                        width: 10,
-                                        child:
-                                        CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      errorWidget:
-                                          (context, url, error) =>
-                                      const Icon(
-                                        Icons.broken_image,
-                                        size: 50,
-                                      ),
-                                    ),
-                                  ),
-                                if (isPdf)
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.picture_as_pdf,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          attachment.title,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          overflow:
-                                          TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                const SizedBox(height: 4),
-                                InkWell(
-                                  onTap:
-                                      () => launchUrl(
-                                    Uri.parse(
-                                      attachment.downloadUrl,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Icon(Icons.download, size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Download',
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ],
-                            );
-                          }),
-
-                        const SizedBox(height: 6),
-
-                        // Message
-                        if (text.isNotEmpty)
-                          Text(
-                            stripHtml(text),
-                            style: TextStyle(
-                              color:
-                              isSentByUser
-                                  ? Colors.white
-                                  : Colors.black,
-                              fontSize: 15,
                             ),
                           ),
-
-                        const SizedBox(height: 6),
-
-                        // Time
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Text(
-                            formatTimeHumanReadable(time),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color:
-                              isSentByUser
-                                  ? Colors.white70
-                                  : Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-          ),
 
-          // Chart input field
-          ChatInputField(onSendMessage: sendMessage),
-        ],
-      ),
+                  // Message Input
+                  ChatInputField(onSendMessage: _sendMessage),
+                ],
+              ),
     );
   }
 }

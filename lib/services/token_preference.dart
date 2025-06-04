@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SaveAccessTokenService {
   static const _tokenKey = 'access_token';
+  static const _buddyBossTokenKey = 'buddy_boss_token';
   static const _loginStatusKey = 'is_logged_in';
   static const _userIdKey = 'user_id';
 
@@ -10,6 +11,16 @@ class SaveAccessTokenService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setBool(_loginStatusKey, true); // Set isLoggedIn to true
+  }
+
+  static Future<void> saveBuddyBossToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_buddyBossTokenKey, token);
+  }
+
+  static Future<String?> getBuddyToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_buddyBossTokenKey);
   }
 
   // Get the access token
