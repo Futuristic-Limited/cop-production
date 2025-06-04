@@ -7,23 +7,7 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-
-  //await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   runApp(const MyApp());
 }
-
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await dotenv.load(fileName: ".env");
-//
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//
-//   final accessToken = await TokenService.getAccessToken();
-//
-//   runApp(MyApp(initialRoute: accessToken != null ? '/groups' : '/login'));
-// }
 
 

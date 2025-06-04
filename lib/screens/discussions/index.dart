@@ -138,9 +138,9 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
   Widget _buildDiscussionTableHeader() {
     return Row(
       children: const [
-        Expanded(flex: 4, child: Text('Discussions', style: TextStyle(fontWeight: FontWeight.bold))),
-        Expanded(flex: 1, child: Text('Replies', style: TextStyle(fontWeight: FontWeight.bold))),
-        Expanded(flex: 2, child: Text('Last Post', style: TextStyle(fontWeight: FontWeight.bold))),
+        Expanded(flex: 4, child: Text('Discussions', style: TextStyle(fontWeight: FontWeight.bold , fontSize: 12))),
+        Expanded(flex: 1, child: Text('Replies', style: TextStyle(fontWeight: FontWeight.bold , fontSize: 12))),
+        Expanded(flex: 2, child: Text('Last Post', style: TextStyle(fontWeight: FontWeight.bold , fontSize: 12))),
       ],
     );
   }
@@ -183,11 +183,13 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.green,
-                            fontSize: 16,
+                            fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text('Started by: ${d.display_name ?? 'Unknown'}'),
+                        Text('Started by: ${d.display_name ?? 'Unknown'}', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10)),
+
+                        //Text('Started by: ${d.display_name ?? 'Unknown'}'),
                       ],
                     ),
                   ),
@@ -209,7 +211,7 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                       ),
                     ),
                   ),
-                  Expanded(flex: 2, child: Text(d.last_reply_date ?? '')),
+                  Expanded(flex: 2, child: Text(d.last_reply_date ?? '',style: TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 10))),
                 ],
               ),
             ),
