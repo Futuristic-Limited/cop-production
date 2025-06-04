@@ -1,28 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 // Models
 import 'package:APHRC_COP/models/buddyboss_thread.dart';
-import 'package:APHRC_COP/models/message_model.dart';
 
 // Services
-import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
 
 // Utils
 import 'package:APHRC_COP/utils/format_time_utils.dart';
-import 'package:APHRC_COP/utils/html_utils.dart';
 import 'package:APHRC_COP/utils/uppercase_first_letter.dart';
 
 // Widgets
@@ -51,7 +41,7 @@ class BuddyBossThreadScreen extends StatefulWidget {
 
 class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
   final _scrollController = ScrollController();
-  bool isLoading = true;
+  bool isLoading = false;
   String? errorMessage;
   BuddyBossThread? thread;
   String? _accessToken;
@@ -60,6 +50,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.threadId == 0) return;
     _fetchThread();
   }
 
@@ -67,13 +58,17 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
     try {
       final token = await SaveAccessTokenService.getBuddyToken();
 
-      print('BuddyBoss Token: $token');
-
       if (token != null) {
         setState(() {
           _accessToken = token;
         });
       }
+
+      if (widget.threadId == 0) return;
+
+      setState(() {
+        isLoading = true;
+      });
 
       final response = await http.get(
         Uri.parse(
@@ -152,114 +147,6 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
 
   String _stripHtml(String html) {
     return _htmlUnescape.convert(html.replaceAll(RegExp(r'<[^>]*>'), ''));
-  }
-
-  Future<void> _downloadImage(String url, BuildContext context) async {
-    // State variable to track download progress
-    bool isDownloading = true;
-    bool success = false;
-    String? savedFilePath;
-
-    try {
-      // Show initial loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (context) => AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Downloading image...',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-      );
-
-      // Check and request storage permission (Android)
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          throw Exception('Storage permission denied');
-        }
-      }
-
-      // Get the image data with progress tracking
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Authorization': 'Bearer $_accessToken'},
-      );
-
-      if (response.statusCode == 200) {
-        // Get downloads directory (permanent storage)
-        final directory =
-            Platform.isAndroid
-                ? await getExternalStorageDirectory()
-                : await getApplicationDocumentsDirectory();
-
-        if (directory == null) throw Exception('Could not access storage');
-
-        // Create better filename with timestamp
-        final fileExtension = url.split('.').last;
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName =
-            'image_$timestamp.${fileExtension.contains('?') ? fileExtension.split('?').first : fileExtension}';
-        final filePath = '${directory.path}/$fileName';
-
-        // 5. Save the file
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
-        savedFilePath = filePath;
-
-        // 6. Save to gallery (optional)
-        try {
-          await GallerySaver.saveImage(filePath);
-        } catch (e) {
-          debugPrint('Could not save to gallery: $e');
-        }
-
-        success = true;
-      } else {
-        throw Exception('Server returned status code ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Download error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      // Dismiss loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-
-        if (success && context.mounted) {
-          // Show success message with option to open file
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Image downloaded successfully!'),
-              action: SnackBarAction(
-                label: 'OPEN',
-                onPressed: () {
-                  if (savedFilePath != null) {
-                    OpenFile.open(savedFilePath);
-                  }
-                },
-              ),
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-      }
-      isDownloading = false;
-    }
   }
 
   @override
@@ -401,10 +288,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                                                                   Colors.white,
                                                                             ),
                                                                             onPressed:
-                                                                                () => _downloadImage(
-                                                                                  media.url!,
-                                                                                  context,
-                                                                                ),
+                                                                                () {},
                                                                           ),
                                                                           // Close Button
                                                                           IconButton(

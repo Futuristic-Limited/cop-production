@@ -228,6 +228,8 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                         int.parse(user.id),
                       );
 
+                      print('Thread ID: $threadId');
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
