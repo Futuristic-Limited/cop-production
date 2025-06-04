@@ -6,7 +6,7 @@ import '../../config/intl.dart';
 import '../../models/user_model.dart';
 import '../../models/groups_model.dart';
 import '../../models/group_invite_model.dart';
-import '../../services/token_preference.dart'; // <- UPDATED HERE
+import '../../services/token_preference.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -21,6 +21,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   List<GroupInvite> invitations = [];
   bool isLoading = true;
   String sortBy = 'Recently Active';
+  int selectedSection = 2;
   int selectedTabIndex = 0;
 
   @override
@@ -30,13 +31,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> loadUserAndGroups() async {
-    print("Starting to load user and groups...");
     try {
       final userData = await fetchUser();
-      print("User data fetched successfully.");
-
       final invites = await fetchGroupInvites();
-      print("Group invites fetched successfully.");
 
       setState(() {
         user = userData;
@@ -44,13 +41,67 @@ class _GroupsScreenState extends State<GroupsScreen> {
         invitations = invites;
         isLoading = false;
       });
-    } catch (e, stacktrace) {
+    } catch (e) {
       print("Error in loadUserAndGroups: $e");
-      print("Stacktrace:\n$stacktrace");
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  Widget _buildSideMenu() {
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const DrawerHeader(
+              child: Text(
+                'Menu',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            _buildMenuItem(icon: Icons.timeline, text: 'Timeline', index: 0),
+            _buildMenuItem(icon: Icons.person, text: 'Profile', index: 1),
+            _buildMenuItem(icon: Icons.group, text: 'Groups', index: 2),
+            _buildMenuItem(icon: Icons.videocam, text: 'Videos', index: 3),
+            _buildMenuItem(icon: Icons.photo, text: 'Photos', index: 4),
+            _buildMenuItem(icon: Icons.forum, text: 'Forums', index: 5),
+            _buildMenuItem(icon: Icons.insert_drive_file, text: 'Documents', index: 6),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String text,
+    required int index,
+  }) {
+    final isSelected = (index == selectedSection);
+    return ListTile(
+      leading: Icon(icon, color: Colors.green),
+      title: Text(
+        text,
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onTap: () {
+        Navigator.of(context).pop();
+        if (index == 1) {
+          Navigator.pushNamed(context, '/profile');
+        } else {
+          setState(() {
+            selectedSection = index;
+            if (index != 2) selectedTabIndex = 0;
+          });
+        }
+      },
+    );
   }
 
   @override
@@ -60,7 +111,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     if (user == null) {
       return const Scaffold(
         body: Center(child: Text('Failed to load user')),
@@ -70,29 +120,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final userJoinDate = user!.joined != null
         ? 'Joined ${SimpleDateFormatter.formatMonthYear(DateTime.parse(user!.joined!))}'
         : 'Join date unknown';
-
     final userStatus = user!.active != null ? 'Active now' : 'Inactive';
 
-    return DefaultTabController(
-      length: 7,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Groups'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Timeline'),
-              Tab(text: 'Profile'),
-              Tab(text: 'Groups'),
-              Tab(text: 'Videos'),
-              Tab(text: 'Photos'),
-              Tab(text: 'Forums'),
-              Tab(text: 'Documents'),
-            ],
-          ),
-        ),
-        body: Column(
-          children: [
+    return Scaffold(
+      drawer: _buildSideMenu(),
+      appBar: AppBar(
+        title: Text(_titleForSection(selectedSection)),
+      ),
+      body: Column(
+        children: [
+          if (selectedSection == 2) ...[
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: _buildUserHeader(userJoinDate, userStatus),
@@ -108,7 +145,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 },
                 borderRadius: BorderRadius.circular(8),
                 selectedColor: Colors.white,
-                fillColor: Theme.of(context).primaryColor,
+                fillColor: Colors.green,
+                color: Colors.black,
                 children: const [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -122,92 +160,84 @@ class _GroupsScreenState extends State<GroupsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: selectedTabIndex == 0
-                  ? _buildGroupsList()
-                  : _buildInvitesList(),
-            ),
           ],
-        ),
+          Expanded(
+            child: _buildSectionBody(userJoinDate, userStatus),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildUserHeader(String joinDate, String status) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundImage: NetworkImage(user!.avatar ?? ''),
-              onBackgroundImageError: (_, __) {
-                print("Error loading user avatar image");
-              },
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(user!.name ?? '',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  Text(joinDate),
-                  Text(status, style: const TextStyle(color: Colors.green)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text('${user!.followers ?? 0} followers',
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(width: 16),
-                      Text('${user!.following ?? 0} following',
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const Text('Order By:'),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: sortBy,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Recently Active',
-                    child: Text('Recently Active'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Most Members',
-                    child: Text('Most Members'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Newly Created',
-                    child: Text('Newly Created'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Alphabetical',
-                    child: Text('Alphabetical'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    sortBy = value!;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
+  String _titleForSection(int index) {
+    switch (index) {
+      case 0:
+        return 'Timeline';
+      case 1:
+        return 'Profile';
+      case 2:
+        return 'Groups';
+      case 3:
+        return 'Videos';
+      case 4:
+        return 'Photos';
+      case 5:
+        return 'Forums';
+      case 6:
+        return 'Documents';
+      default:
+        return '';
+    }
+  }
+
+  Widget _buildSectionBody(String userJoinDate, String userStatus) {
+    switch (selectedSection) {
+      case 0:
+        return _buildTimelinePlaceholder();
+      case 1:
+        return _buildProfilePlaceholder();
+      case 2:
+        return selectedTabIndex == 0 ? _buildGroupsList() : _buildInvitesList();
+      case 3:
+        return _buildVideosPlaceholder();
+      case 4:
+        return _buildPhotosPlaceholder();
+      case 5:
+        return _buildForumsPlaceholder();
+      case 6:
+        return _buildDocumentsPlaceholder();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildTimelinePlaceholder() {
+    return const Center(child: Text('Timeline content goes here'));
+  }
+
+  Widget _buildProfilePlaceholder() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () => Navigator.pushNamed(context, '/profile'),
+        child: const Text('Go to Profile Screen'),
+      ),
     );
+  }
+
+  Widget _buildVideosPlaceholder() {
+    return const Center(child: Text('Videos content goes here'));
+  }
+
+  Widget _buildPhotosPlaceholder() {
+    return const Center(child: Text('Photos content goes here'));
+  }
+
+  Widget _buildForumsPlaceholder() {
+    return const Center(child: Text('Forums content goes here'));
+  }
+
+  Widget _buildDocumentsPlaceholder() {
+    return const Center(child: Text('Documents content goes here'));
   }
 
   Widget _buildGroupsList() {
@@ -231,7 +261,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       ? NetworkImage(group.avatarUrl!)
                       : null,
                   child: group.avatarUrl == null
-                      ? const Icon(Icons.group, size: 28)
+                      ? const Icon(Icons.group, size: 28, color: Colors.green)
                       : null,
                 ),
                 const SizedBox(width: 16),
@@ -239,17 +269,40 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(group.name,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      // Wrap name in GestureDetector, passing group.toJson()
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/group-detail',
+                            arguments: {'group': group.toJson()},
+                          );
+                        },
+                        child: Text(
+                          group.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(group.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(height: 8),
                       Text(
-                        '${group.memberCount ?? 0} members · ${group.lastActive ?? "Recently active"}',
-                        style: TextStyle(color: Colors.grey[600]),
+                        group.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => leaveGroup(group.id),
+                        icon: const Icon(Icons.exit_to_app, color: Colors.red),
+                        label: const Text('Leave Group', style: TextStyle(color: Colors.red)),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
                     ],
                   ),
@@ -277,24 +330,20 @@ class _GroupsScreenState extends State<GroupsScreen> {
             leading: CircleAvatar(
               radius: 28,
               backgroundImage: NetworkImage(invite.groupImage),
-              onBackgroundImageError: (_, __) {
-                print("Error loading invite group image");
-              },
+              onBackgroundImageError: (_, __) {},
             ),
-            title: Text(invite.groupName),
-            subtitle: Text("Invited by ${invite.inviterName}"),
+            title: Text(invite.groupName, style: const TextStyle(color: Colors.black)),
+            subtitle: Text("Invited by ${invite.inviterName}", style: const TextStyle(color: Colors.black87)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () =>
-                      acceptInvite(invite.groupId, invite.invitationId),
+                  onPressed: () => acceptInvite(invite.groupId, invite.invitationId),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () =>
-                      rejectInvite(invite.groupId, invite.invitationId),
+                  onPressed: () => rejectInvite(invite.groupId, invite.invitationId),
                 ),
               ],
             ),
@@ -307,7 +356,38 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget _emptyMessage(String text) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Center(child: Text(text)),
+      child: Center(child: Text(text, style: const TextStyle(color: Colors.black))),
+    );
+  }
+
+  Widget _buildUserHeader(String joinDate, String status) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundImage: NetworkImage(user!.avatar ?? ''),
+          onBackgroundImageError: (_, __) {},
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user!.name ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text(joinDate, style: const TextStyle(color: Colors.black)),
+              Text(status, style: const TextStyle(color: Colors.green)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text('${user!.followers ?? 0} followers', style: const TextStyle(color: Colors.black)),
+                  const SizedBox(width: 16),
+                  Text('${user!.following ?? 0} following', style: const TextStyle(color: Colors.black)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -315,9 +395,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   Future<User> fetchUser() async {
     final apiUrl = dotenv.env['API_URL'];
-    final token = await SaveAccessTokenService.getAccessToken(); // <- UPDATED
-
-    print("Fetching user from $apiUrl/groups/index");
+    final token = await SaveAccessTokenService.getAccessToken();
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/index'),
@@ -327,23 +405,17 @@ class _GroupsScreenState extends State<GroupsScreen> {
       },
     );
 
-    print("User fetch status: ${response.statusCode}");
-
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print("User data: ${jsonEncode(data)}");
       return User.fromJson(data['user']);
     } else {
-      print("Error response: ${response.body}");
       throw Exception('Failed to load user');
     }
   }
 
   Future<List<GroupInvite>> fetchGroupInvites() async {
     final apiUrl = dotenv.env['API_URL'];
-    final token = await SaveAccessTokenService.getAccessToken(); // <- UPDATED
-
-    print("Fetching group invites from $apiUrl/groups/invite/pending");
+    final token = await SaveAccessTokenService.getAccessToken();
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/invite/pending'),
@@ -353,24 +425,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
       },
     );
 
-    print("Invites fetch status: ${response.statusCode}");
-
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print("Invite data: ${jsonEncode(data)}");
       final invites = data['invites'] as List<dynamic>;
       return invites.map((json) => GroupInvite.fromJson(json)).toList();
     } else {
-      print("Error response: ${response.body}");
       throw Exception('Failed to load invites');
     }
   }
 
   Future<void> acceptInvite(int groupId, int invitationId) async {
     final apiUrl = dotenv.env['API_URL'];
-    final token = await SaveAccessTokenService.getAccessToken(); // <- UPDATED
-
-    print("Accepting invite: groupId=$groupId, invitationId=$invitationId");
+    final token = await SaveAccessTokenService.getAccessToken();
 
     final response = await http.post(
       Uri.parse('$apiUrl/groups/invite/accept'),
@@ -384,21 +450,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
       }),
     );
 
-    print("Accept invite response status: ${response.statusCode}");
-
     if (response.statusCode == 200) {
-      print("Invite accepted successfully.");
       loadUserAndGroups();
     } else {
-      print("Failed to accept invite. Response: ${response.body}");
+      print("Failed to accept invite: ${response.body}");
     }
   }
 
   Future<void> rejectInvite(int groupId, int invitationId) async {
     final apiUrl = dotenv.env['API_URL'];
-    final token = await SaveAccessTokenService.getAccessToken(); // <- UPDATED
-
-    print("Rejecting invite: groupId=$groupId, invitationId=$invitationId");
+    final token = await SaveAccessTokenService.getAccessToken();
 
     final response = await http.post(
       Uri.parse('$apiUrl/groups/invite/reject'),
@@ -412,13 +473,38 @@ class _GroupsScreenState extends State<GroupsScreen> {
       }),
     );
 
-    print("Reject invite response status: ${response.statusCode}");
-
     if (response.statusCode == 200) {
-      print("Invite rejected successfully.");
       loadUserAndGroups();
     } else {
-      print("Failed to reject invite. Response: ${response.body}");
+      print("Failed to reject invite: ${response.body}");
+    }
+  }
+
+  Future<void> leaveGroup(int groupId) async {
+    final apiUrl = dotenv.env['API_URL'];
+    final token = await SaveAccessTokenService.getAccessToken();
+
+    final response = await http.post(
+      Uri.parse('$apiUrl/member/leave/group'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'group_id': groupId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      await loadUserAndGroups();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You have left the group')),
+      );
+    } else {
+      print("Failed to leave group: ${response.body}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to leave the group')),
+      );
     }
   }
 }
