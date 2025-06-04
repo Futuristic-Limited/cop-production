@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:badges/badges.dart' as badges;
 
 class CustomDrawer extends StatelessWidget {
   final bool isLoggedIn;
@@ -48,8 +52,9 @@ class CustomDrawer extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children:
-              isLoggedIn ? _buildLoggedInItems(context) : _buildGuestItems(context),
+              children: isLoggedIn
+                  ? _buildLoggedInItems(context)
+                  : _buildGuestItems(context),
             ),
           ),
         ],
@@ -61,7 +66,19 @@ class CustomDrawer extends StatelessWidget {
     return [
       _drawerItem(context, Icons.home, 'Home', '/home'),
       _drawerItem(context, Icons.settings, 'Settings', '/settings'),
-      _drawerItem(context, Icons.notifications, 'Notifications', '/notifications'),
+      FutureBuilder<int>(
+        future: _getUnreadNotificationCount(),
+        builder: (context, snapshot) {
+          int count = snapshot.data ?? 0;
+          return _drawerItem(
+            context,
+            Icons.notifications,
+            'Notifications',
+            '/notifications',
+            badgeCount: count,
+          );
+        },
+      ),
       _drawerItem(context, Icons.group, 'Groups', '/groups'),
       _drawerItem(context, Icons.message, 'Messages', '/messages'),
       _drawerItem(context, Icons.email, 'Email Invite', '/email_invites'),
@@ -73,7 +90,7 @@ class CustomDrawer extends StatelessWidget {
           style: TextStyle(fontSize: 16),
         ),
         onTap: () async {
-          Navigator.pop(context); // Close drawer first
+          Navigator.pop(context);
           await SharedPrefsService.logout();
           onLogout();
         },
@@ -88,14 +105,53 @@ class CustomDrawer extends StatelessWidget {
     ];
   }
 
-  Widget _drawerItem(BuildContext context, IconData icon, String title, String routeName) {
+  Widget _drawerItem(BuildContext context, IconData icon, String title, String routeName,
+      {int? badgeCount}) {
     return ListTile(
-      leading: Icon(icon, color: Colors.green),
+      leading: badgeCount != null && badgeCount > 0
+          ? badges.Badge(
+        badgeContent: Text(
+          badgeCount.toString(),
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        badgeStyle: const badges.BadgeStyle(
+          badgeColor: Colors.red,
+          padding: EdgeInsets.all(6),
+        ),
+        child: Icon(icon, color: Colors.green),
+      )
+          : Icon(icon, color: Colors.green),
       title: Text(title, style: const TextStyle(fontSize: 16)),
       onTap: () {
         Navigator.pop(context);
         Navigator.pushNamed(context, routeName);
       },
     );
+  }
+
+  Future<int> _getUnreadNotificationCount() async {
+    try {
+      final token = await SharedPrefsService.getAccessToken();
+      final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+      final url = Uri.parse('$apiUrl/notifications');
+
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token',
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> notifications = data['notifications'];
+        final unreadCount =
+            notifications.where((n) => n['is_new'] == 1).length;
+        return unreadCount;
+      } else {
+        debugPrint("Failed to load notifications: ${response.statusCode}");
+        return 0;
+      }
+    } catch (e) {
+      debugPrint("Error fetching notifications: $e");
+      return 0;
+    }
   }
 }
