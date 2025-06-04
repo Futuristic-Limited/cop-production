@@ -30,10 +30,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
       curve: Curves.easeOutBack,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
 
@@ -116,9 +113,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                       ),
                     ),
 
-
-
-
                     const SizedBox(height: 8),
 
                     // Tagline – elegant and centered
@@ -146,7 +140,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
               ),
             ),
           ),
-
         ],
       ),
     );
@@ -223,7 +216,8 @@ class BubblePainter extends CustomPainter {
     final paint = Paint();
     for (var bubble in bubbles) {
       double dx = bubble.x * size.width;
-      double dy = size.height -
+      double dy =
+          size.height -
           ((bubble.y + bubble.speed * progress * 1000) % size.height);
       paint.color = bubble.color;
       canvas.drawCircle(Offset(dx, dy), bubble.radius, paint);
