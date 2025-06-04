@@ -67,10 +67,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> markAsRead(dynamic id) async {
     final intId = int.tryParse(id.toString()) ?? 0;
     if (intId == 0) {
-      // handle invalid id
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid notification id')),
+          const SnackBar(content: Text('Invalid notification ID')),
         );
       }
       return;
@@ -94,77 +93,92 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       debugPrint('Error marking as read: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to mark notification as read')),
+          const SnackBar(content: Text('Failed to mark as read')),
         );
       }
     }
   }
 
-
   Widget buildNotificationTile(dynamic notification, bool isUnread) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isUnread ? const Color(0xFFE9F8E4) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUnread ? const Color(0xFF79C148) : Colors.grey.shade300,
+          width: 1.0,
+        ),
+      ),
       child: ListTile(
-        leading: Icon(
-          Icons.notifications,
-          color: isUnread ? const Color(0xFF79C148) : Colors.grey,
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          backgroundColor: isUnread ? const Color(0xFF79C148) : Colors.grey,
+          child: const Icon(Icons.notifications, color: Colors.white),
         ),
         title: Text(
           notification['title'] ?? 'No title',
           style: TextStyle(
             fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+            fontSize: 16,
+            color: Colors.black87,
           ),
         ),
-        subtitle: Text(notification['message'] ?? ''),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            notification['message'] ?? '',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
         trailing: isUnread
-            ? TextButton(
+            ? ElevatedButton(
           onPressed: () => markAsRead(notification['id']),
-          child: const Text('Mark as read'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF79C148),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          child: const Text('Mark Read', style: TextStyle(fontSize: 12)),
         )
-            : null,
+            : const SizedBox(),
       ),
     );
   }
 
-  Widget buildNotificationList() {
-    if (unread.isEmpty && read.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Text('No notifications found.'),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+  Widget buildSection(String title, List<dynamic> items, bool isUnread) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (unread.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Unread',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF79C148),
-              ),
+        if (items.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isUnread ? const Color(0xFF79C148) : Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isUnread ? const Color(0xFF79C148) : Colors.grey,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${items.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
           ),
-        ...unread.map((n) => buildNotificationTile(n, true)),
-        if (read.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Read',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-        ...read.map((n) => buildNotificationTile(n, false)),
+        ...items.map((n) => buildNotificationTile(n, isUnread)).toList(),
       ],
     );
   }
@@ -187,7 +201,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       )
           : RefreshIndicator(
         onRefresh: fetchNotifications,
-        child: buildNotificationList(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 10),
+              buildSection('Unread', unread, true),
+              const SizedBox(height: 20),
+              buildSection('Read', read, false),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
     );
   }
