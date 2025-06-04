@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:APHRC_COP/components/text_fields.dart';
-import 'package:APHRC_COP/components/button.dart';
 import 'package:APHRC_COP/screens/auth/register_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -36,10 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'email': email,
-          'password': password,
-        },
+        body: {'email': email, 'password': password},
       );
 
       print("Login Response: ${response.body}");
@@ -52,7 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => VerifyOtpScreen(email: email),
+            builder:
+                (context) => VerifyOtpScreen(email: email, password: password),
           ),
         );
       } else {
@@ -79,11 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: apHrcGreen,
-
-
-      ),
+      appBar: AppBar(backgroundColor: apHrcGreen),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -135,7 +127,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         filled: true,
                         fillColor: Color(0xFFF6FFF1), // APHRC light green
                         focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: apHrcGreen, width: 2),
+                          borderSide: const BorderSide(
+                            color: apHrcGreen,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
@@ -154,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-// Password field
+                    // Password field
                     TextFormField(
                       controller: passwordTextController,
                       obscureText: _obscurePassword,
@@ -163,17 +158,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             color: apHrcGreen,
                           ),
                           onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                         ),
                         filled: true,
                         fillColor: Color(0xFFF6FFF1), // APHRC light green
                         focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: apHrcGreen, width: 2),
+                          borderSide: const BorderSide(
+                            color: apHrcGreen,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
@@ -211,17 +213,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                          if (_formKey.currentState!.validate()) {
-                            final email =
-                            emailTextController.text.trim();
-                            final password =
-                            passwordTextController.text.trim();
-                            loginUser(email, password);
-                          }
-                        },
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : () {
+                                  if (_formKey.currentState!.validate()) {
+                                    final email =
+                                        emailTextController.text.trim();
+                                    final password =
+                                        passwordTextController.text.trim();
+                                    loginUser(email, password);
+                                  }
+                                },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: apHrcGreen,
                           foregroundColor: Colors.white,
@@ -230,19 +233,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        )
-                            : const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child:
+                            _isLoading
+                                ? const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -257,8 +261,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) =>
-                                  const RegisterScreen()),
+                                builder: (context) => const RegisterScreen(),
+                              ),
                             );
                           },
                           child: const Text(

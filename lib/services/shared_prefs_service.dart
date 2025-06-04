@@ -7,6 +7,7 @@ class SharedPrefsService {
     required String tokenExpiresAt,
     required String userName,
     required String userId,
+    required String buddyBossToken,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
@@ -15,17 +16,24 @@ class SharedPrefsService {
     await prefs.setString('user_name', userName);
     await prefs.setString('user_id', userId);
     await prefs.setBool('is_logged_in', true);
+    await prefs.setString('buddy_boss_token', buddyBossToken);
   }
 
   static Future<void> saveProfilePhotoUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_photo_url', url);
   }
+
+  static Future<String?> getBuddyBossToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('buddy_boss_token');
+  }
+
   static Future<void> saveUserId(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_id', userId);
-
   }
+
   static Future<String?> getProfilePhotoUrl() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('profile_photo_url');

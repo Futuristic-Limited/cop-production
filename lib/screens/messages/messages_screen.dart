@@ -57,14 +57,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
         final data = jsonDecode(response.body);
         final Map<String, dynamic> nestedThreads = data['threads'];
         final List<dynamic> threadList = nestedThreads['threads'];
-        final String userIdStr = nestedThreads['userId'].toString();
+        final String userIdStr = nestedThreads['sender_id'].toString();
 
         setState(() {
           threads =
               threads =
-              threadList
-                  .map((json) => MessageThread.fromJson(json))
-                  .toList();
+                  threadList
+                      .map((json) => MessageThread.fromJson(json))
+                      .toList();
           user = userIdStr;
           isLoading = false;
         });
@@ -87,100 +87,100 @@ class _MessagesScreenState extends State<MessagesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Messages')),
       body:
-      isLoading
-          ? const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Color.fromARGB(255, 28, 196, 107),
-          ),
-        ),
-      )
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : threads.isEmpty
-          ? LottieEmpty(title: 'Start a conversation!')
-          : ListView.builder(
-        itemCount: threads.length,
-        itemBuilder: (context, index) {
-          final thread = threads[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(
-                thread.participantAvatar ?? '',
-              ),
-            ),
-            title: Text(capitalizeFirstLetter(thread.participantName)),
-            subtitle: Text(
-              stripHtml(thread.latestMessage),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  formatTime(thread.latestDateSent),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+          isLoading
+              ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.fromARGB(255, 28, 196, 107),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(Icons.chat_bubble_outline),
-                    if (thread.unreadCount > 0)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
-                          ),
-                          child: Text(
-                            '${thread.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
+              )
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : threads.isEmpty
+              ? LottieEmpty(title: 'Start a conversation!')
+              : ListView.builder(
+                itemCount: threads.length,
+                itemBuilder: (context, index) {
+                  final thread = threads[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(
+                        thread.participantAvatar ?? '',
+                      ),
+                    ),
+                    title: Text(capitalizeFirstLetter(thread.participantName)),
+                    subtitle: Text(
+                      stripHtml(thread.latestMessage),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatTime(thread.latestDateSent),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => ThreadScreen(
-                    threadId: thread.threadId,
-                    userId: int.parse(user!),
-                    userName: thread.participantName,
-                    profilePicture: thread.participantAvatar ?? '',
-                  ),
-                ),
-              );
-              if (result == 'refresh') {
-                // Refresh the inbox if the user sent a new message
-                fetchInbox();
-              }
-            },
-          );
-        },
-      ),
+                        const SizedBox(height: 4),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(Icons.chat_bubble_outline),
+                            if (thread.unreadCount > 0)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                  ),
+                                  child: Text(
+                                    '${thread.unreadCount}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => BuddyBossThreadScreen(
+                                threadId: int.parse(thread.threadId),
+                                userId: int.parse(thread.senderId),
+                                userName: thread.participantName,
+                                profilePicture: thread.participantAvatar ?? '',
+                              ),
+                        ),
+                      );
+                      if (result == 'refresh') {
+                        // Refresh the inbox if the user sent a new message
+                        fetchInbox();
+                      }
+                    },
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
         child: const Icon(Icons.message, color: Colors.white),
@@ -190,7 +190,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             MaterialPageRoute(
               builder:
                   (context) =>
-              const NewMessageScreen(title: 'New Conversation'),
+                      const NewMessageScreen(title: 'New Conversation'),
             ),
           );
         },
