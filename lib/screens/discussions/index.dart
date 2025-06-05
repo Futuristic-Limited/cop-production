@@ -203,11 +203,20 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.green,
-                            fontSize: 16,
+                            fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text('Started by: ${d.display_name ?? 'Unknown'}'),
+                        Text(
+                          'Started by: ${d.display_name ?? 'Unknown'}',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+
+                        //Text('Started by: ${d.display_name ?? 'Unknown'}'),
                       ],
                     ),
                   ),
@@ -222,6 +231,7 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                       alignment: Alignment.center,
                       child: Text(
                         d.reply_count ?? '-',
+                        d.reply_count ?? '-',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -229,7 +239,17 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                       ),
                     ),
                   ),
-                  Expanded(flex: 2, child: Text(d.last_reply_date ?? '')),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      d.last_reply_date ?? '',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.normal,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

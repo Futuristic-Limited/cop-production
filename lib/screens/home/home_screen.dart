@@ -2,7 +2,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import '../../cells/custom_app_bar.dart';
 import '../../cells/custom_drawer.dart';
-import '../../cells/custom_bottom_nav_bar.dart';
 import '../../cells/community_card.dart';
 import '../../services/community_service.dart';
 import '../../services/shared_prefs_service.dart';
@@ -16,7 +15,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
   bool isLoggedIn = false;
   final CommunityService communityService = CommunityService();
 
@@ -27,13 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'assets/community_banner.jpg',
     'assets/community_banner2.jpg',
     'assets/community_banner3.jpg',
-  ];
-
-  final List<Widget> _screens = [
-    const Center(child: Text('Home Placeholder')),
-    const Center(child: Text('News Feed')),
-    const Center(child: Text('Members')),
-    const Center(child: Text('Groups')),
   ];
 
   @override
@@ -71,8 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoggedIn: isLoggedIn,
         onLogout: _handleLogout,
       ),
-      body: _selectedIndex == 0
-          ? Column(
+      body: Column(
         children: [
           SizedBox(
             height: 200,
@@ -111,16 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          isLoading
-              ? const Expanded(
-            child: Center(child: CircularProgressIndicator()),
-          )
-              : Expanded(
-            child: GridView.builder(
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               itemCount: communities.length,
-              gridDelegate:
-              SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
@@ -133,11 +120,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      )
-          : _screens[_selectedIndex],
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
       ),
     );
   }

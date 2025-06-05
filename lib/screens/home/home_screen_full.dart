@@ -131,18 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Members'),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
-        ],
-      ),
     );
   }
 

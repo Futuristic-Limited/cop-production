@@ -99,12 +99,12 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
               ),
               Container(
                 color: const Color(0xFF7BC148),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 4),
-                    Text(widget.discussion.post_date ?? '', style: const TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(widget.discussion.post_date ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Row(
                       children: const [
@@ -118,7 +118,7 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
                         Expanded(child: Text(widget.discussion.post_title ?? '', style: const TextStyle(color: Colors.black87, fontSize: 12))),
                       ],
                     ),
-                    const Divider(height: 20),
+                    const Divider(height: 10),
                   ],
                 ),
               ),

@@ -1,3 +1,4 @@
+import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/auth/reset_password_screen.dart';
 //import 'screens/home/landing_page.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
+import 'screens/groups/group_detail_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -24,6 +26,8 @@ class MyApp extends StatelessWidget {
       title: 'APHRC COP',
       theme: ThemeData(primarySwatch: Colors.green),
       home: const AnimatedSplashScreen(),
+
+      // Use named routes for simple screens
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -34,10 +38,29 @@ class MyApp extends StatelessWidget {
         '/courses': (context) => const CoursesScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/notifications': (context) => const NotificationsScreen(),
-        // '/landing': (context) => const LandingPage(),
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
+      },
+
+      // Use onGenerateRoute for screens that need arguments
+      onGenerateRoute: (settings) {
+        if (settings.name == '/group-detail') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (_) => GroupDetailScreen(group: args['group']),
+          );
+        }
+
+        if (settings.name == '/groups/members') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupMembersScreen(groupId: groupId),
+          );
+        }
+
+        return null; // fallback
       },
     );
   }
