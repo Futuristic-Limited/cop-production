@@ -178,7 +178,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
           ),
-        ...items.map((n) => buildNotificationTile(n, isUnread)).toList(),
+        ...items.map((n) => buildNotificationTile(n, isUnread)),
       ],
     );
   }

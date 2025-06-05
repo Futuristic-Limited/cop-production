@@ -6,7 +6,7 @@ class FollowerStats extends StatelessWidget {
 
   final FollowerData? stats;
 
-  const FollowerStats({Key? key, required this.stats}) : super(key: key);
+  const FollowerStats({super.key, required this.stats});
 
   @override
   Widget build(BuildContext context) {

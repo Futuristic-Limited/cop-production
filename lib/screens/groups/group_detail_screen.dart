@@ -47,7 +47,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         children: [
           _buildAboutSection(),
           _buildDiscussionSection(isWideScreen),
-          _buildMembersSection(),
           _buildFilesSection(),
         ],
       ),
@@ -82,10 +81,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 (imageUrl != null && imageUrl.isNotEmpty)
                     ? NetworkImage(imageUrl)
                     : null,
+                backgroundColor: Colors.green.shade300,
                 child: (imageUrl == null || imageUrl.isEmpty)
                     ? const Icon(Icons.group, size: 40, color: Colors.white)
                     : null,
-                backgroundColor: Colors.green.shade300,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -125,23 +124,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   Widget _buildDiscussionSection(bool isWideScreen) {
     final groupSlug = widget.group['slug'] ?? 'default-group';
     return DiscussionsScreen(groupd: groupSlug);
-  }
-
-  Widget _buildMembersSection() {
-    final members =
-        (widget.group['members'] as List<dynamic>?)?.cast<String>() ??
-            ['Benard Kiptoo', 'Jane Doe', 'John Smith'];
-
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      itemCount: members.length,
-      separatorBuilder: (_, __) => const Divider(),
-      itemBuilder: (_, i) => ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.person)),
-        title: Text(members[i]),
-        trailing: const Icon(Icons.message),
-      ),
-    );
   }
 
   Widget _buildFilesSection() {
@@ -200,7 +182,15 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               icon: Icons.people,
               text: 'Members',
               index: 2,
-              onTap: () => _switchTab(2),
+              onTap: () {
+                print('Members menu item clicked with groupId: ${widget.group['id']}');
+                Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/groups/members',
+                  arguments: {'groupId': widget.group['id']},
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.folder,
