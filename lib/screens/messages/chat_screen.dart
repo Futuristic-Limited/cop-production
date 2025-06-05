@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_view/photo_view.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 // Models
 import 'package:APHRC_COP/models/buddyboss_thread.dart';
 
@@ -51,29 +52,34 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
   void initState() {
     super.initState();
     if (widget.threadId == 0) return;
-    _fetchThread();
+    _init();
   }
 
-  Future<void> _fetchThread() async {
+  Future<void> _init() async {
+    await _fetchThread(widget.threadId);
+  }
+
+  Future<void> _getAccessToken() async {
+    final token = await SaveAccessTokenService.getBuddyToken();
+
+    if (token != null) {
+      setState(() {
+        _accessToken = token;
+      });
+    }
+  }
+
+  Future<void> _fetchThread(int threadId) async {
+    await _getAccessToken();
     try {
-      final token = await SaveAccessTokenService.getBuddyToken();
-
-      if (token != null) {
-        setState(() {
-          _accessToken = token;
-        });
-      }
-
-      if (widget.threadId == 0) return;
+      if (threadId == 0) return;
 
       setState(() {
         isLoading = true;
       });
 
       final response = await http.get(
-        Uri.parse(
-          '${buddyBossApiUrl}wp-json/buddyboss/v1/messages/${widget.threadId}',
-        ),
+        Uri.parse('${buddyBossApiUrl}wp-json/buddyboss/v1/messages/$threadId'),
         headers: {
           'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
@@ -85,6 +91,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
           thread = BuddyBossThread.fromJson(json.decode(response.body));
           isLoading = false;
         });
+
         _scrollToBottom();
       } else {
         setState(() {
@@ -112,10 +119,23 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
     });
   }
 
-  Future<void> _sendMessage(String messageText) async {
+  Future<void> _sendMessage(String messageText, List<File> files) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentUserId = prefs.getInt('chartUserId');
+      print('The files are here: $files');
+      await _getAccessToken();
+      final currentUserId = await SharedPrefsService.getUserId();
+      final Map<String, dynamic> payload = {'message': messageText};
+
+      print('Current user id: $currentUserId');
+
+      if (widget.threadId > 0) {
+        payload['thread_id'] = widget.threadId;
+        payload['recipients'] = [widget.userId];
+        payload['sender_id'] = currentUserId;
+      } else {
+        payload['recipients'] = [widget.userId];
+        payload['subject'] = 'New message';
+      }
 
       final response = await http.post(
         Uri.parse('${buddyBossApiUrl}wp-json/buddyboss/v1/messages'),
@@ -123,16 +143,18 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
           'Authorization': 'Bearer $_accessToken',
           'Content-Type': 'application/json',
         },
-        body: json.encode({
-          'thread_id': widget.threadId,
-          'message': messageText,
-          'sender_id': currentUserId,
-          'recipients': [widget.userId],
-        }),
+        body: json.encode(payload),
       );
+
       if (response.statusCode == 200) {
-        // Refresh the thread after sending
-        await _fetchThread();
+        if (widget.threadId > 0) {
+          await _fetchThread(widget.threadId);
+        } else {
+          // Refresh the thread after sending
+          final responseData = json.decode(response.body);
+          final newThreadId = responseData['id'];
+          await _fetchThread(newThreadId);
+        }
       } else {
         ScaffoldMessenger.of(
           context,
@@ -193,14 +215,12 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                       itemBuilder: (context, index) {
                         final message = thread!.messages[index];
                         final isSentByUser = message.senderId == widget.userId;
-                        final sender =
-                            thread!.recipients[message.senderId.toString()];
 
                         return Align(
                           alignment:
                               isSentByUser
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
+                                  ? Alignment.centerLeft
+                                  : Alignment.centerRight,
                           child: Container(
                             margin: const EdgeInsets.symmetric(vertical: 3),
                             padding: const EdgeInsets.all(12),
@@ -211,8 +231,8 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                             decoration: BoxDecoration(
                               color:
                                   isSentByUser
-                                      ? const Color(0xFF7BC148)
-                                      : Colors.grey.shade300,
+                                      ? const Color.fromARGB(255, 175, 174, 174)
+                                      : const Color(0xFF7BC148),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
@@ -226,7 +246,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                         message.bpMediaIds!.map((media) {
                                           return Column(
                                             children: [
-                                              const SizedBox(height: 6),
+                                              const SizedBox(height: 3),
                                               ClipRRect(
                                                 borderRadius:
                                                     BorderRadius.circular(8),
@@ -341,8 +361,6 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                       fontSize: 15,
                                     ),
                                   ),
-
-                                const SizedBox(height: 6),
 
                                 // Time
                                 Align(
