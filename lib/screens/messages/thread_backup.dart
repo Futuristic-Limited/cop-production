@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:APHRC_COP/models/message_model.dart';
 import 'package:APHRC_COP/screens/messages/chart_input_field.dart';
-import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
 import 'package:APHRC_COP/utils/format_time_utils.dart';
 import 'package:APHRC_COP/utils/html_utils.dart';
@@ -429,7 +428,7 @@ class _ThreadScreenState extends State<ThreadScreen> {
                   ),
 
                   // Chart input field
-                  ChatInputField(onSendMessage: sendMessage),
+                  // ChatInputField(onSendMessage: sendMessage),
                 ],
               ),
     );

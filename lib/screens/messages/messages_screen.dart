@@ -161,13 +161,24 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       ],
                     ),
                     onTap: () async {
+                      final currentUserId =
+                          await SharedPrefsService.getUserId();
+                      print('Current user id one: $currentUserId');
+
+                      int otherUserId;
+                      if (thread.participantId == currentUserId.toString()) {
+                        otherUserId = int.parse(thread.senderId);
+                      } else {
+                        otherUserId = int.parse(thread.participantId);
+                      }
+
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
                               (context) => BuddyBossThreadScreen(
                                 threadId: int.parse(thread.threadId),
-                                userId: int.parse(thread.senderId),
+                                userId: otherUserId,
                                 userName: thread.participantName,
                                 profilePicture: thread.participantAvatar ?? '',
                               ),

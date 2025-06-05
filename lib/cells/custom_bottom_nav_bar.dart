@@ -5,10 +5,10 @@ class CustomBottomNavBar extends StatelessWidget {
   final Function(int) onTap;
 
   const CustomBottomNavBar({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,6 @@ class CustomBottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
         BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Members'),
         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-
       ],
     );
   }

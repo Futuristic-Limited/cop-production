@@ -33,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
     NewsFeedScreen(),
     MembersScreen(),
     GroupsScreen(),
-
   ];
 
   void _onItemTapped(int index) {
@@ -195,7 +194,7 @@ class LogOutScreen extends StatelessWidget {
 // -----------------------------------------
 
 class HomeContent extends StatefulWidget {
-  const HomeContent({Key? key}) : super(key: key);
+  const HomeContent({super.key});
   @override
   _HomeContentState createState() => _HomeContentState();
 }

@@ -3,7 +3,6 @@ import '../../services/discussions_service.dart';
 import '../../models/discussions_model.dart';
 import 'discussion_detail_screen.dart';
 
-
 // class DiscussionsScreen extends StatefulWidget {
 //   const DiscussionsScreen({super.key});
 //
@@ -43,8 +42,6 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
 
   Future<void> fetchDiscussions() async {
     try {
-
-
       print(groupd);
 
       final service = DiscussionService();
@@ -74,7 +71,9 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
 
     if (title.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both title and description')),
+        const SnackBar(
+          content: Text('Please enter both title and description'),
+        ),
       );
       return;
     }
@@ -85,7 +84,11 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
 
     try {
       final service = DiscussionService();
-      final success = await service.postDiscussion(title, description, groupd: groupd );
+      final success = await service.postDiscussion(
+        title,
+        description,
+        groupd: groupd,
+      );
       if (success) {
         titleController.clear();
         descController.clear();
@@ -138,9 +141,24 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
   Widget _buildDiscussionTableHeader() {
     return Row(
       children: const [
-        Expanded(flex: 4, child: Text('Discussions', style: TextStyle(fontWeight: FontWeight.bold))),
-        Expanded(flex: 1, child: Text('Replies', style: TextStyle(fontWeight: FontWeight.bold))),
-        Expanded(flex: 2, child: Text('Last Post', style: TextStyle(fontWeight: FontWeight.bold))),
+        Expanded(
+          flex: 4,
+          child: Text(
+            'Discussions',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Text('Replies', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Last Post',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
       ],
     );
   }
@@ -159,7 +177,9 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
         final d = discussions[index];
         return GestureDetector(
           onTap: () {
-            Navigator.of(context).push(_createSlideRoute(DiscussionDetailScreen(discussion: d)));
+            Navigator.of(
+              context,
+            ).push(_createSlideRoute(DiscussionDetailScreen(discussion: d)));
           },
           child: Card(
             elevation: 6,
@@ -201,7 +221,7 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                       padding: const EdgeInsets.all(8),
                       alignment: Alignment.center,
                       child: Text(
-                        '${d.reply_count ?? '-'}',
+                        d.reply_count ?? '-',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -226,7 +246,10 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
         const begin = Offset(1.0, 0.0);
         const end = Offset.zero;
         const curve = Curves.easeInOut;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
         return SlideTransition(position: animation.drive(tween), child: child);
       },
       opaque: false,
@@ -238,7 +261,10 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Ask a question or share an idea', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text(
+          'Ask a question or share an idea',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: titleController,
@@ -261,13 +287,17 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
           children: [
             ElevatedButton(
               onPressed: isPosting ? null : postDiscussion,
-              child: isPosting
-                  ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-                  : const Text('Post'),
+              child:
+                  isPosting
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Post'),
             ),
             const SizedBox(width: 12),
             OutlinedButton(
@@ -278,7 +308,7 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
               child: const Text('Discard Draft'),
             ),
           ],
-        )
+        ),
       ],
     );
   }

@@ -22,9 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'APHRC COP',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green),
       home: const AnimatedSplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
@@ -36,11 +34,10 @@ class MyApp extends StatelessWidget {
         '/courses': (context) => const CoursesScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/notifications': (context) => const NotificationsScreen(),
-       // '/landing': (context) => const LandingPage(),
+        // '/landing': (context) => const LandingPage(),
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
-
       },
     );
   }
