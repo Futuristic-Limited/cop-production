@@ -107,28 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedIndex == 0
               ? Column(
                 children: [
-                  SizedBox(
-                    height: 200,
-                    child: CarouselSlider(
-                      options: CarouselOptions(
-                        autoPlay: true,
-                        enlargeCenterPage: true,
-                        viewportFraction: 1.0,
-                        aspectRatio: 16 / 9,
-                      ),
-                      items:
-                          bannerImages.map((imagePath) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                imagePath,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              ),
-                            );
-                          }).toList(),
-                    ),
-                  ),
+                  // 🔍 SEARCH BAR — moved to top
                   Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: TextField(
@@ -154,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // Search suggestions
+                  // Search Suggestions
                   if (_showSuggestions && filteredCommunities.isNotEmpty)
                     Container(
                       height: 150,
@@ -171,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () {
                               final selected = filteredCommunities[index];
                               setState(() {
-                                communities = [selected]; // Show only selected
+                                communities = [selected];
                                 filteredCommunities = [selected];
                                 _searchController.clear();
                                 _showSuggestions = false;
@@ -183,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                  // Optional Clear Filter button
+                  //  Clear filter
                   if (communities.length == 1)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -208,8 +187,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
+                  //  BANNER
+                  SizedBox(
+                    height: 200,
+                    child: CarouselSlider(
+                      options: CarouselOptions(
+                        autoPlay: true,
+                        enlargeCenterPage: true,
+                        viewportFraction: 1.0,
+                        aspectRatio: 16 / 9,
+                      ),
+                      items:
+                          bannerImages.map((imagePath) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                imagePath,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.0,
+                      vertical: 8,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -222,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+
                   isLoading
                       ? const Expanded(
                         child: Center(child: CircularProgressIndicator()),
