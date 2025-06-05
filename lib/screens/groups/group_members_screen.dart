@@ -24,9 +24,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   Map<String, dynamic>? _groupData;
   List<GroupMember> _members = [];
   List<GroupMember> _filteredMembers = [];
-
   TextEditingController _searchController = TextEditingController();
-
   static const Color _aphrcGreen = Color(0xFF8BC53F);
 
   @override
@@ -247,9 +245,18 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
               ),
             ),
             _buildMenuItem(
+              icon: Icons.home,
+              text: 'Home',
+              index: 0,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+            ),
+            _buildMenuItem(
               icon: Icons.info,
               text: 'About',
-              index: 0,
+              index: 1,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -262,7 +269,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.forum,
               text: 'Discussions',
-              index: 1,
+              index: 2,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -275,18 +282,18 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.people,
               text: 'Members',
-              index: 2,
+              index: 3,
               onTap: () {
                 Navigator.of(context).pop();
                 setState(() {
-                  _selectedIndex = 2;
+                  _selectedIndex = 3;
                 });
               },
             ),
             _buildMenuItem(
               icon: Icons.folder,
               text: 'Files',
-              index: 3,
+              index: 4,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -296,11 +303,11 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 );
               },
             ),
-            const Divider(),
+            // const Divider(),
             _buildMenuItem(
               icon: Icons.person,
               text: 'Profile',
-              index: -1,
+              index: 5,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -309,7 +316,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.group,
               text: 'Groups',
-              index: -1,
+              index: 6,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(context, '/groups');

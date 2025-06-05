@@ -167,21 +167,30 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ),
             ),
             _buildMenuItem(
-              icon: Icons.info,
-              text: 'About',
+              icon: Icons.home,
+              text: 'Home',
               index: 0,
-              onTap: () => _switchTab(0),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(context, '/home');
+              },
             ),
             _buildMenuItem(
-              icon: Icons.forum,
-              text: 'Discussions',
+              icon: Icons.info,
+              text: 'About',
               index: 1,
               onTap: () => _switchTab(1),
             ),
             _buildMenuItem(
+              icon: Icons.forum,
+              text: 'Discussions',
+              index: 2,
+              onTap: () => _switchTab(2),
+            ),
+            _buildMenuItem(
               icon: Icons.people,
               text: 'Members',
-              index: 2,
+              index: 3,
               onTap: () {
                 print('Members menu item clicked with groupId: ${widget.group['id']}');
                 Navigator.of(context).pop();
@@ -195,14 +204,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             _buildMenuItem(
               icon: Icons.folder,
               text: 'Files',
-              index: 3,
-              onTap: () => _switchTab(3),
+              index: 4,
+              onTap: () => _switchTab(4),
             ),
             const Divider(),
             _buildMenuItem(
               icon: Icons.person,
               text: 'Profile',
-              index: 4,
+              index: 5,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/profile');
@@ -211,7 +220,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             _buildMenuItem(
               icon: Icons.group,
               text: 'Groups',
-              index: 5,
+              index: 6,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/groups');
