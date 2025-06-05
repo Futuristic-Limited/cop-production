@@ -64,6 +64,7 @@ class SharedPrefsService {
     return prefs.getBool('is_logged_in') ?? false;
   }
 
+
   /// logout handler
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -72,7 +73,7 @@ class SharedPrefsService {
     await prefs.remove('token_expires_at');
     await prefs.remove('user_name');
     await prefs.remove('user_id');
-    await prefs.remove('is_logged_in');
-    await prefs.remove('profile_photo_url');
+    await prefs.setBool('is_logged_in', false);
+
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:APHRC_COP/components/text_fields.dart';
 import 'package:APHRC_COP/components/button.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -17,6 +16,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final fullNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -24,11 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isPasswordVisible = false;
   bool isLoading = false;
 
-  Future<void> registerUser(
-    String fullName,
-    String email,
-    String password,
-  ) async {
+  Future<void> registerUser(String fullName, String email, String password) async {
     setState(() => isLoading = true);
     var url = Uri.parse('$apiUrl/register');
 
@@ -49,13 +45,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (context) => VerifyOtpScreen(email: email, password: password),
+            builder: (context) => VerifyOtpScreen(
+              email: email,
+              password: password,
+            ),
           ),
         );
+
       } else {
+        print("Backend error: ${data['message']}");
         Fluttertoast.showToast(msg: data['message'] ?? "Registration failed.");
       }
+
     } catch (e) {
       Fluttertoast.showToast(msg: "Error: $e");
     } finally {
@@ -73,134 +74,195 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 36),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: const Icon(
-                    Icons.person_add_alt_1,
-                    size: 90,
-                    color: apHrcGreen,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'And connect with Africa’s leading knowledge community.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Colors.black54),
-                ),
-                const SizedBox(height: 28),
-
-                MyTextField(
-                  controller: fullNameController,
-                  hintText: 'Full Name',
-                  obsecureText: false,
-                ),
-                const SizedBox(height: 18),
-
-                MyTextField(
-                  controller: emailController,
-                  hintText: 'Email',
-                  obsecureText: false,
-                ),
-                const SizedBox(height: 18),
-
-                // Password with toggle
-                TextField(
-                  controller: passwordController,
-                  obscureText: !isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    filled: true,
-                    fillColor: Color(
-                      0xFFF6FFF1,
-                    ), // Light APHRC green background to match other fields
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 20,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF6EBF4B), // APHRC green color
-                        width: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF6EBF4B), // Same color when focused
-                        width: 2,
-                      ),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                      padding: const EdgeInsets.all(20),
+                      child: const Icon(
+                        Icons.person_add_alt_1,
+                        size: 90,
                         color: apHrcGreen,
                       ),
-                      onPressed: () {
-                        setState(() => isPasswordVisible = !isPasswordVisible);
-                      },
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 20),
 
-                const SizedBox(height: 28),
+                    const Text(
+                      'Community of Practice',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Create your account below',
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 30),
 
-                isLoading
-                    ? const CircularProgressIndicator()
-                    : MyButton(
-                      text: 'Sign Up',
-                      onPressed: () {
-                        String fullName = fullNameController.text.trim();
-                        String email = emailController.text.trim();
-                        String password = passwordController.text.trim();
-
-                        if (fullName.isEmpty ||
-                            email.isEmpty ||
-                            password.isEmpty) {
-                          Fluttertoast.showToast(
-                            msg: 'Please fill in all fields',
-                          );
-                        } else if (!email.contains('@')) {
-                          Fluttertoast.showToast(msg: 'Enter a valid email');
-                        } else if (password.length < 6) {
-                          Fluttertoast.showToast(
-                            msg: 'Password must be at least 6 characters',
-                          );
-                        } else {
-                          registerUser(fullName, email, password);
+                    // Full name
+                    TextFormField(
+                      controller: fullNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: const Icon(Icons.person_outline),
+                        filled: true,
+                        fillColor: const Color(0xFFF6FFF1),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Full name is required';
                         }
+                        return null;
                       },
                     ),
+                    const SizedBox(height: 20),
 
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Already have an account? "),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Text(
-                        'Login here!',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: apHrcGreen,
+                    // Email
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        filled: true,
+                        fillColor: const Color(0xFFF6FFF1),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Email is required';
+                        } else if (!value.contains('@')) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: !isPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: apHrcGreen,
+                          ),
+                          onPressed: () {
+                            setState(() => isPasswordVisible = !isPasswordVisible);
+                          },
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF6FFF1),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: apHrcGreen, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Password is required';
+                        } else if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Sign Up Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                          if (_formKey.currentState!.validate()) {
+                            registerUser(
+                              fullNameController.text.trim(),
+                              emailController.text.trim(),
+                              passwordController.text.trim(),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: apHrcGreen,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 20),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already have an account? "),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Text(
+                            'Login here!',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: apHrcGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
                   ],
                 ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
           ),
         ),

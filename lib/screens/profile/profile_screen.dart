@@ -9,8 +9,12 @@ import 'dart:io';
 import 'package:APHRC_COP/services/follower_service.dart';
 import 'package:APHRC_COP/widgets/follower_stats.dart';
 import 'package:APHRC_COP/models/follower_model.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
+
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+bool isSaving = false;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -110,6 +114,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => isSaving = true);
+
     final token = await SharedPrefsService.getAccessToken();
 
     try {
@@ -127,34 +133,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'department': _departmentController.text,
           'organization': _organizationController.text,
           'city': _cityController.text,
-          // 'country': _countryController.text,
+          'country': _countryController.text,
         },
       );
 
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+        Fluttertoast.showToast(
+          msg: "Profile updated successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green[600],
+          textColor: Colors.white,
+          fontSize: 16.0,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Failed to update')),
+        Fluttertoast.showToast(
+          msg: data['message'] ?? 'Failed to update',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red[600],
+          textColor: Colors.white,
+          fontSize: 16.0,
         );
       }
     } catch (e) {
       debugPrint("Update Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error updating profile')),
+      Fluttertoast.showToast(
+        msg: "Error updating profile",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red[600],
+        textColor: Colors.white,
+        fontSize: 16.0,
       );
+    } finally {
+      setState(() => isSaving = false);
     }
   }
 
   Future<void> _onImageSelected(File imageFile) async {
     setState(() => isLoading = true);
     try {
-      await uploadProfileImage(imageFile); // This already saves to prefs
-      await _loadProfilePhotoUrl(); // Reload from shared prefs
+      await uploadProfileImage(imageFile);
+      await _loadProfilePhotoUrl();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile photo updated successfully')),
@@ -242,44 +265,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildLabeledField("Department", _departmentController),
                         _buildLabeledField("Organization", _organizationController),
                         _buildLabeledField("City", _cityController),
-                        // Uncomment if needed
-                        // _buildLabeledField("Country", _countryController),
+                        _buildLabeledField("Country", _countryController),
 
                         const SizedBox(height: 24),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                _loadUserData(); // reset form to original data
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Changes discarded')),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: aphrcGreen.withOpacity(0.3),
-                                foregroundColor: aphrcGreen.darken(0.3),
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                              ),
-                              child: const Text("Cancel"),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: isSaving ? null : _updateProfile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: aphrcGreen,
+                              foregroundColor: Colors.white,
+                              shape: const StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                              elevation: 3,
+                              shadowColor: aphrcGreen.withOpacity(0.7),
                             ),
-                            const SizedBox(width: 20),
-                            ElevatedButton(
-                              onPressed: _updateProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: aphrcGreen,
-                                foregroundColor: Colors.white,
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                                elevation: 3,
-                                shadowColor: aphrcGreen.withOpacity(0.7),
+                            child: isSaving
+                                ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
-                              child: const Text("Save Update"),
-                            ),
-                          ],
+                            )
+                                : const Text("Save Update"),
+                          ),
                         ),
+
                       ],
                     ),
                   ),
