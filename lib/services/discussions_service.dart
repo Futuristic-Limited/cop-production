@@ -49,7 +49,7 @@ class DiscussionService {
   }
 
   Future<DiscussionsResponse?> discussionReplies(String discussionID) async {
-    final url = Uri.parse('$apiBaseUrl/discussion-replys/' + discussionID);
+    final url = Uri.parse('$apiBaseUrl/discussion-replys/$discussionID');
     final token = await _getToken();
 
     final response = await http.get(

@@ -4,7 +4,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import '../../services/community_service.dart';
 
 class LandingPage extends StatefulWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  const LandingPage({super.key});
 
   @override
   State<LandingPage> createState() => _LandingPageState();

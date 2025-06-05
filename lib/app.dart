@@ -1,3 +1,4 @@
+import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -27,6 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
       ),
       home: const AnimatedSplashScreen(),
+
+      // Use named routes for simple screens
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -34,19 +37,34 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/messages': (context) => const MessagesScreen(),
         '/groups': (context) => const GroupsScreen(),
-        '/group-detail': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return GroupDetailScreen(group: args['group']);
-        },
         '/courses': (context) => const CoursesScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/notifications': (context) => const NotificationsScreen(),
-       // '/landing': (context) => const LandingPage(),
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
+      },
 
+      // Use onGenerateRoute for screens that need arguments
+      onGenerateRoute: (settings) {
+        if (settings.name == '/group-detail') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (_) => GroupDetailScreen(group: args['group']),
+          );
+        }
+
+        if (settings.name == '/groups/members') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupMembersScreen(groupId: groupId),
+          );
+        }
+
+        return null; // fallback
       },
     );
   }
 }
+

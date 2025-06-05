@@ -3,6 +3,7 @@ class GroupMember {
   final String username;
   final String displayName;
   final String avatarUrl;
+  final int followersCount;
   bool isFollowing;
 
   GroupMember({
@@ -10,16 +11,18 @@ class GroupMember {
     required this.username,
     required this.displayName,
     required this.avatarUrl,
+    required this.followersCount,
     required this.isFollowing,
   });
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
     return GroupMember(
-      id: json['id'],
-      username: json['username'],
-      displayName: json['display_name'],
-      avatarUrl: json['avatar_url'],
-      isFollowing: json['isFollowing'] as bool,
+      id: int.tryParse(json['user_id'].toString()) ?? 0,
+      username: json['user_login'] ?? '',
+      displayName: json['display_name'] ?? '',
+      avatarUrl: json['avatar_url'] ?? '',
+      followersCount: json['followers_count'] ?? 0,
+      isFollowing: json['isFollowing'] as bool? ?? false,
     );
   }
 }

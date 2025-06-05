@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
-  const CustomAppBar({Key? key, this.title = 'APHRC Community of Practice'})
-    : super(key: key);
+  const CustomAppBar({super.key, this.title = 'APHRC Community of Practice'});
 
   @override
   Widget build(BuildContext context) {

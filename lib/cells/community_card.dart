@@ -3,17 +3,17 @@ import '../screens/groups/group_detail_screen.dart';
 import '../../services/community_service.dart';
 import '../../services/token_preference.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:html/parser.dart'; // You might not need this import
+// You might not need this import
 
 class CommunityCard extends StatelessWidget {
   final Map<String, dynamic> community;
   final CommunityService communityService;
 
   const CommunityCard({
-    Key? key,
+    super.key,
     required this.community,
     required this.communityService,
-  }) : super(key: key);
+  });
 
   void _handleJoin(BuildContext context, Map<String, dynamic> community) async {
     bool isLoggedIn = await SaveAccessTokenService.isLoggedIn();
