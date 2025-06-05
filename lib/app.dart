@@ -24,9 +24,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'APHRC COP',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green),
       home: const AnimatedSplashScreen(),
 
       // Use named routes for simple screens
@@ -67,4 +65,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

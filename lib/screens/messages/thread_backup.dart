@@ -428,7 +428,7 @@ class _ThreadScreenState extends State<ThreadScreen> {
                   ),
 
                   // Chart input field
-                  ChatInputField(onSendMessage: sendMessage),
+                  // ChatInputField(onSendMessage: sendMessage),
                 ],
               ),
     );

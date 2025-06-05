@@ -33,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
     NewsFeedScreen(),
     MembersScreen(),
     GroupsScreen(),
-
   ];
 
   void _onItemTapped(int index) {

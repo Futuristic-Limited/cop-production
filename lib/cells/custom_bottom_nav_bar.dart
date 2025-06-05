@@ -21,7 +21,6 @@ class CustomBottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
         BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Members'),
         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-
       ],
     );
   }
