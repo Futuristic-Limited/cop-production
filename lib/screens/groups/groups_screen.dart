@@ -31,6 +31,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> loadUserAndGroups() async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       final userData = await fetchUser();
       final invites = await fetchGroupInvites();
@@ -127,6 +131,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
       drawer: _buildSideMenu(),
       appBar: AppBar(
         title: Text(_titleForSection(selectedSection)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync',
+            onPressed: () {
+              loadUserAndGroups();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Syncing groups and invitations...')),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -138,7 +154,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ToggleButtons(
-                isSelected: [selectedTabIndex == 0, selectedTabIndex == 3],
+                isSelected: [selectedTabIndex == 0, selectedTabIndex == 1],
                 onPressed: (index) {
                   setState(() {
                     selectedTabIndex = index;
@@ -217,13 +233,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Widget _buildHomePlaceholder() {
-    // Redirect immediately when this widget is built
     Future.microtask(() {
       if (ModalRoute.of(context)?.settings.name != '/home') {
         Navigator.pushReplacementNamed(context, '/home');
       }
     });
-    return const SizedBox.shrink(); // Empty placeholder
+    return const SizedBox.shrink();
   }
 
   Widget _buildTimelinePlaceholder() {
@@ -231,13 +246,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Widget _buildProfilePlaceholder() {
-    // Redirect immediately when this widget is built
     Future.microtask(() {
       if (ModalRoute.of(context)?.settings.name != '/profile') {
         Navigator.pushReplacementNamed(context, '/profile');
       }
     });
-    return const SizedBox.shrink(); // Empty placeholder
+    return const SizedBox.shrink();
   }
 
   Widget _buildVideosPlaceholder() {
@@ -285,7 +299,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Wrap name in GestureDetector, passing group.toJson()
                       GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(
