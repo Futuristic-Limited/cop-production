@@ -192,7 +192,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               text: 'Members',
               index: 3,
               onTap: () {
-                print('Members menu item clicked with groupId: ${widget.group['id']}');
                 Navigator.of(context).pop();
                 Navigator.pushNamed(
                   context,
