@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/group_member_model.dart';
@@ -24,9 +23,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   Map<String, dynamic>? _groupData;
   List<GroupMember> _members = [];
   List<GroupMember> _filteredMembers = [];
-
   TextEditingController _searchController = TextEditingController();
-
   static const Color _aphrcGreen = Color(0xFF8BC53F);
 
   @override
@@ -113,7 +110,6 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
             .toList();
 
-        // Initially filtered list = full list
         _filteredMembers = _members;
 
         setState(() {
@@ -133,18 +129,98 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
     }
   }
 
-  void _toggleFollowLocally(GroupMember member) {
+  Future<bool> _followUser(int targetUserId) async {
+    final apiUrl = dotenv.env['API_URL'];
+    final token = await SaveAccessTokenService.getAccessToken();
+    if (apiUrl == null || token == null) return false;
+
+    final url = Uri.parse('$apiUrl/follow/$targetUserId');
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Failed to follow user: ${response.statusCode}, ${response.body}');
+      return false;
+    }
+  }
+
+  Future<bool> _unfollowUser(int targetUserId) async {
+    final apiUrl = dotenv.env['API_URL'];
+    final token = await SaveAccessTokenService.getAccessToken();
+    if (apiUrl == null || token == null) return false;
+
+    final url = Uri.parse('$apiUrl/unfollow/$targetUserId');
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Failed to unfollow user: ${response.statusCode}, ${response.body}');
+      return false;
+    }
+  }
+
+  void _toggleFollowStatus(GroupMember member) async {
+    final bool currentlyFollowing = member.followStatus == 'unfollow';
+
+    // Optimistic update
     setState(() {
-      member.isFollowing = !member.isFollowing;
+      member.followStatus = currentlyFollowing ? 'follow' : 'unfollow';
     });
+
+    bool success = false;
+
+    if (!currentlyFollowing) {
+      // User wants to follow
+      success = await _followUser(member.id);
+    } else {
+      // User wants to unfollow
+      success = await _unfollowUser(member.id);
+    }
+
+    if (!success) {
+      // Revert state if API call fails
+      setState(() {
+        member.followStatus = currentlyFollowing ? 'unfollow' : 'follow';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to ${currentlyFollowing ? 'unfollow' : 'follow'} user.',
+          ),
+        ),
+      );
+    }
+  }
+
+  String _getFollowLabel(String status) {
+    // status 'unfollow' means currently following, so button should say 'Unfollow'
+    // status 'follow' means currently NOT following, so button should say 'Follow'
+    return status == 'unfollow' ? 'Unfollow' : 'Follow';
+  }
+
+  Color _getFollowColor(String status) {
+    return status == 'unfollow' ? Colors.red : _aphrcGreen;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Group Members'),
-      ),
+      appBar: AppBar(title: const Text('Group Members')),
       drawer: _buildSideMenu(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -153,7 +229,6 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // REPLACED group description with search bar here
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -170,9 +245,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
           const Divider(),
           if (_filteredMembers.isEmpty)
             const Expanded(
-              child: Center(
-                child: Text('No members found.'),
-              ),
+              child: Center(child: Text('No members found.')),
             )
           else
             Expanded(
@@ -196,13 +269,11 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextButton(
-                          onPressed: () => _toggleFollowLocally(member),
+                          onPressed: () => _toggleFollowStatus(member),
                           child: Text(
-                            member.isFollowing ? 'Unfollow' : 'Follow',
+                            _getFollowLabel(member.followStatus),
                             style: TextStyle(
-                              color: member.isFollowing
-                                  ? Colors.red
-                                  : Colors.blue,
+                              color: _getFollowColor(member.followStatus),
                             ),
                           ),
                         ),
@@ -247,9 +318,18 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
               ),
             ),
             _buildMenuItem(
+              icon: Icons.home,
+              text: 'Home',
+              index: 0,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+            ),
+            _buildMenuItem(
               icon: Icons.info,
               text: 'About',
-              index: 0,
+              index: 1,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -262,7 +342,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.forum,
               text: 'Discussions',
-              index: 1,
+              index: 2,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -275,18 +355,18 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.people,
               text: 'Members',
-              index: 2,
+              index: 3,
               onTap: () {
                 Navigator.of(context).pop();
                 setState(() {
-                  _selectedIndex = 2;
+                  _selectedIndex = 3;
                 });
               },
             ),
             _buildMenuItem(
               icon: Icons.folder,
               text: 'Files',
-              index: 3,
+              index: 4,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
@@ -296,11 +376,11 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 );
               },
             ),
-            const Divider(),
+            // const Divider(),
             _buildMenuItem(
               icon: Icons.person,
               text: 'Profile',
-              index: -1,
+              index: 5,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -309,7 +389,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             _buildMenuItem(
               icon: Icons.group,
               text: 'Groups',
-              index: -1,
+              index: 6,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(context, '/groups');

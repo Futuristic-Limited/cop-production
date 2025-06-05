@@ -21,7 +21,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   List<GroupInvite> invitations = [];
   bool isLoading = true;
   String sortBy = 'Recently Active';
-  int selectedSection = 2;
+  int selectedSection = 3;
   int selectedTabIndex = 0;
 
   @override
@@ -31,6 +31,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> loadUserAndGroups() async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       final userData = await fetchUser();
       final invites = await fetchGroupInvites();
@@ -61,13 +65,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
-            _buildMenuItem(icon: Icons.timeline, text: 'Timeline', index: 0),
-            _buildMenuItem(icon: Icons.person, text: 'Profile', index: 1),
-            _buildMenuItem(icon: Icons.group, text: 'Groups', index: 2),
-            _buildMenuItem(icon: Icons.videocam, text: 'Videos', index: 3),
-            _buildMenuItem(icon: Icons.photo, text: 'Photos', index: 4),
-            _buildMenuItem(icon: Icons.forum, text: 'Forums', index: 5),
-            _buildMenuItem(icon: Icons.insert_drive_file, text: 'Documents', index: 6),
+            _buildMenuItem(icon: Icons.home, text: 'Home', index: 0),
+            _buildMenuItem(icon: Icons.timeline, text: 'Timeline', index: 1),
+            _buildMenuItem(icon: Icons.person, text: 'Profile', index: 2),
+            _buildMenuItem(icon: Icons.group, text: 'Groups', index: 3),
+            _buildMenuItem(icon: Icons.videocam, text: 'Videos', index: 4),
+            _buildMenuItem(icon: Icons.photo, text: 'Photos', index: 5),
+            _buildMenuItem(icon: Icons.forum, text: 'Forums', index: 6),
+            _buildMenuItem(icon: Icons.insert_drive_file, text: 'Documents', index: 7),
           ],
         ),
       ),
@@ -92,12 +97,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
       selected: isSelected,
       onTap: () {
         Navigator.of(context).pop();
-        if (index == 1) {
+        if (index == 2) {
           Navigator.pushNamed(context, '/profile');
         } else {
           setState(() {
             selectedSection = index;
-            if (index != 2) selectedTabIndex = 0;
+            if (index != 3) selectedTabIndex = 0;
           });
         }
       },
@@ -126,10 +131,22 @@ class _GroupsScreenState extends State<GroupsScreen> {
       drawer: _buildSideMenu(),
       appBar: AppBar(
         title: Text(_titleForSection(selectedSection)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync',
+            onPressed: () {
+              loadUserAndGroups();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Syncing groups and invitations...')),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          if (selectedSection == 2) ...[
+          if (selectedSection == 3) ...[
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: _buildUserHeader(userJoinDate, userStatus),
@@ -172,18 +189,20 @@ class _GroupsScreenState extends State<GroupsScreen> {
   String _titleForSection(int index) {
     switch (index) {
       case 0:
-        return 'Timeline';
+        return 'Home';
       case 1:
-        return 'Profile';
+        return 'Timeline';
       case 2:
-        return 'Groups';
+        return 'Profile';
       case 3:
-        return 'Videos';
+        return 'Groups';
       case 4:
-        return 'Photos';
+        return 'Videos';
       case 5:
-        return 'Forums';
+        return 'Photos';
       case 6:
+        return 'Forums';
+      case 7:
         return 'Documents';
       default:
         return '';
@@ -193,22 +212,33 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget _buildSectionBody(String userJoinDate, String userStatus) {
     switch (selectedSection) {
       case 0:
-        return _buildTimelinePlaceholder();
+        return _buildHomePlaceholder();
       case 1:
-        return _buildProfilePlaceholder();
+        return _buildTimelinePlaceholder();
       case 2:
-        return selectedTabIndex == 0 ? _buildGroupsList() : _buildInvitesList();
+        return _buildProfilePlaceholder();
       case 3:
-        return _buildVideosPlaceholder();
+        return selectedTabIndex == 0 ? _buildGroupsList() : _buildInvitesList();
       case 4:
-        return _buildPhotosPlaceholder();
+        return _buildVideosPlaceholder();
       case 5:
-        return _buildForumsPlaceholder();
+        return _buildPhotosPlaceholder();
       case 6:
+        return _buildForumsPlaceholder();
+      case 7:
         return _buildDocumentsPlaceholder();
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildHomePlaceholder() {
+    Future.microtask(() {
+      if (ModalRoute.of(context)?.settings.name != '/home') {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    });
+    return const SizedBox.shrink();
   }
 
   Widget _buildTimelinePlaceholder() {
@@ -216,12 +246,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Widget _buildProfilePlaceholder() {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () => Navigator.pushNamed(context, '/profile'),
-        child: const Text('Go to Profile Screen'),
-      ),
-    );
+    Future.microtask(() {
+      if (ModalRoute.of(context)?.settings.name != '/profile') {
+        Navigator.pushReplacementNamed(context, '/profile');
+      }
+    });
+    return const SizedBox.shrink();
   }
 
   Widget _buildVideosPlaceholder() {
@@ -269,7 +299,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Wrap name in GestureDetector, passing group.toJson()
                       GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(
