@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../../cells/custom_app_bar.dart';
-import '../../cells/custom_drawer.dart';
+import '../../drawer/AnimatedDrawerWrapper.dart';
 import '../../cells/custom_bottom_nav_bar.dart';
 import '../../cells/community_card.dart';
 import '../../services/community_service.dart';
@@ -102,7 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: const CustomAppBar(),
-      drawer: CustomDrawer(isLoggedIn: isLoggedIn, onLogout: _handleLogout),
+      drawer: AnimatedDrawerWrapper(
+        isLoggedIn: true,
+        onLogout: () async {
+          await SharedPrefsService.logout();
+          Navigator.pushReplacementNamed(context, '/login');
+        },
+      ),
       body:
       _selectedIndex == 0
           ? Column(

@@ -5,9 +5,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
+import 'package:APHRC_COP/notifiers/profile_photo_notifier.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+
 Future<void> uploadProfileImage(File imageFile) async {
   try {
     final token = await SharedPrefsService.getAccessToken();
@@ -39,6 +41,7 @@ Future<void> uploadProfileImage(File imageFile) async {
       if (success && photoUrl != null && photoUrl.toString().isNotEmpty) {
         print('✅ Upload successful: $photoUrl');
         await SharedPrefsService.saveProfilePhotoUrl(photoUrl);
+        ProfilePhotoNotifier.profilePhotoUrl.value = photoUrl;
       } else {
         print('⚠️ Upload response success=false or missing photo_url');
       }
