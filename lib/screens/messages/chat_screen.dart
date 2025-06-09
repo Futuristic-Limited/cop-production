@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -119,14 +118,20 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
     });
   }
 
-  Future<void> _sendMessage(String messageText, List<File> files) async {
+  Future<void> _sendMessage(String messageText, String attachmentIds) async {
     try {
-      print('The files are here: $files');
       await _getAccessToken();
       final currentUserId = await SharedPrefsService.getUserId();
-      final Map<String, dynamic> payload = {'message': messageText};
+      final Map<String, dynamic> payload = {
+        'message':
+            (messageText.isEmpty && attachmentIds.isNotEmpty)
+                ? ''
+                : messageText,
+      };
 
-      print('Current user id: $currentUserId');
+      if (attachmentIds.isNotEmpty) {
+        payload['bp_media_ids'] = [attachmentIds];
+      }
 
       if (widget.threadId > 0) {
         payload['thread_id'] = widget.threadId;
@@ -147,12 +152,12 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
       );
 
       if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final newThreadId = responseData['id'];
         if (widget.threadId > 0) {
           await _fetchThread(widget.threadId);
         } else {
           // Refresh the thread after sending
-          final responseData = json.decode(response.body);
-          final newThreadId = responseData['id'];
           await _fetchThread(newThreadId);
         }
       } else {
