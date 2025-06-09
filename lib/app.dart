@@ -16,6 +16,8 @@ import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
 import 'screens/discussions/index.dart';
+import 'screens/events/events_screen.dart';
+import 'screens/guidelines/guidelines_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -42,6 +44,8 @@ class MyApp extends StatelessWidget {
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
+        '/events': (context) => const EventsScreen(),
+        '/guidelines': (context) => const GuidelinesScreen(),
       },
 
       // Use onGenerateRoute for screens that need arguments
