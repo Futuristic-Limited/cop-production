@@ -138,6 +138,8 @@ class CustomDrawer extends StatelessWidget {
           );
         },
       ),
+      _drawerItem(context, Icons.event, 'Events', '/events'),
+      _drawerItem(context, Icons.rule, 'Community Guidelines', '/guidelines'),
       _drawerItem(context, Icons.group, 'Groups', '/groups'),
       _drawerItem(context, Icons.message, 'Messages', '/messages'),
       _drawerItem(context, Icons.email, 'Email Invite', '/email_invites'),
