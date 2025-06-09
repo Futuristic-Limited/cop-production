@@ -34,9 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final List<Widget> _screens = [
-    const Center(child: Text('Home Placeholder')),
+    const Center(child: Text('Home')),
     const Center(child: Text('News Feed')),
-    const Center(child: Text('Members')),
+    const Center(child: Text('Notifications')),
     const Center(child: Text('Groups')),
   ];
 
@@ -249,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  "OUR COMMUNITIES",
+                  "APHRC COMMUNITIES",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -279,12 +279,41 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       )
-
           : _screens[_selectedIndex],
+
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+            switch (index) {
+              case 0:
+                Navigator.pushNamed(context, '/home');
+                break;
+              case 1:
+                Navigator.pushNamed(context, '/feed');
+                break;
+              case 2:
+                Navigator.pushNamed(context, '/notifications');
+                break;
+              case 3:
+                Navigator.pushNamed(context, '/groups');
+                break;
+            }
+          });
+        },
       ),
+      // bottomNavigationBar: CustomBottomNavBar(
+      //   selectedIndex: _selectedIndex,
+      //   onTap: (index) => setState(() => _selectedIndex = index),
+      // ),
+      //
+
+
     );
   }
 }
+
+
+
+

@@ -46,6 +46,8 @@ class MyApp extends StatelessWidget {
         '/email_invites': (context) => const SendEmailInvitesScreen(),
         '/events': (context) => const EventsScreen(),
         '/guidelines': (context) => const GuidelinesScreen(),
+
+        '/feed': (context) => const HomeScreen(),
       },
 
       // Use onGenerateRoute for screens that need arguments
