@@ -223,7 +223,7 @@ class _LandingPageState extends State<LandingPage> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "OUR COMMUNITIES",
+                  "APHRC COMMUNITIES",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
