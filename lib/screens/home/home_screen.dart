@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const Center(child: Text('Home')),
     const Center(child: Text('News Feed')),
-    const Center(child: Text('Notifications')),
+    const Center(child: Text('Members')),
     const Center(child: Text('Groups')),
   ];
 
@@ -291,10 +291,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pushNamed(context, '/home');
                 break;
               case 1:
-                Navigator.pushNamed(context, '/feed');
+                //Navigator.pushNamed(context, '/feed');
+                const Center(child: Text('to do : News Feed'));
                 break;
               case 2:
-                Navigator.pushNamed(context, '/notifications');
+                //Navigator.pushNamed(context, '/notifications');
+                const Center(child: Text('to do : Members holder'));
                 break;
               case 3:
                 Navigator.pushNamed(context, '/groups');
