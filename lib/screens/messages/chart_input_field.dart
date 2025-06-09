@@ -1,14 +1,20 @@
+import 'package:APHRC_COP/services/token_preference.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-// !keep to see if being tracked by git
-// ios/Runner/Info.plist
-// android/app/src/main/AndroidManifest.xml
+final buddyBossApiUrl = dotenv.env['WP_API_URL'];
+final apiUrl = dotenv.env['WP_API_URL'];
+
 class ChatInputField extends StatefulWidget {
-  final Function(String message, List<File> attachments) onSendMessage;
+  final Function(String message, String attachmentIds) onSendMessage;
   final int maxVideoDurationSeconds;
   final int maxFileSizeMB;
 
@@ -27,6 +33,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
   final TextEditingController _controller = TextEditingController();
   List<File> _pickedFiles = [];
   final ImagePicker _picker = ImagePicker();
+  String? _ciAccessToken;
+  String? _uploaded;
+  bool _isUploading = false;
 
   Future<void> _showErrorDialog(String message) async {
     await showDialog(
@@ -49,6 +58,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
       setState(() => _pickedFiles.add(File(picked.path)));
+      await _uploadAndAdd(File(picked.path));
     }
   }
 
@@ -56,6 +66,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     final picked = await _picker.pickImage(source: ImageSource.camera);
     if (picked != null) {
       setState(() => _pickedFiles.add(File(picked.path)));
+      await _uploadAndAdd(File(picked.path));
     }
   }
 
@@ -69,6 +80,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
         final file = File(picked.path);
         if (await _validateVideo(file)) {
           setState(() => _pickedFiles.add(file));
+          await _uploadAndAdd(File(picked.path));
         }
       }
     } catch (e) {
@@ -86,6 +98,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
         final file = File(picked.path);
         if (await _validateVideo(file)) {
           setState(() => _pickedFiles.add(file));
+          await _uploadAndAdd(File(picked.path));
         }
       }
     } catch (e) {
@@ -121,6 +134,11 @@ class _ChatInputFieldState extends State<ChatInputField> {
       setState(() {
         _pickedFiles.addAll(result.paths.map((path) => File(path!)).toList());
       });
+
+      // Upload and add attachments
+      for (final file in result.paths.map((path) => File(path!)).toList()) {
+        await _uploadAndAdd(file);
+      }
     }
   }
 
@@ -128,11 +146,92 @@ class _ChatInputFieldState extends State<ChatInputField> {
     setState(() => _pickedFiles.removeAt(index));
   }
 
+  Future<void> _getAccessToken() async {
+    final ciToken = await SaveAccessTokenService.getBuddyToken();
+    if (ciToken != null) {
+      setState(() {
+        _ciAccessToken = ciToken;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> _uploadMedia(File file) async {
+    try {
+      await _getAccessToken();
+
+      setState(() {
+        _isUploading = true;
+      });
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${apiUrl}wp-json/wp/v2/media'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $_ciAccessToken';
+
+      final contentType = _getContentType(file.path);
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: contentType,
+        ),
+      );
+
+      final response = await request.send();
+      if (response.statusCode == 201) {
+        setState(() {
+          _isUploading = false;
+        });
+        final responseData = await response.stream.bytesToString();
+        final jsonData = json.decode(responseData);
+        return {'id': jsonData['id']};
+      }
+
+      return null;
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+      print('Error uploading file: $e');
+      return null;
+    }
+  }
+
+  Future<void> _uploadAndAdd(File file) async {
+    final result = await _uploadMedia(file);
+    if (!mounted) return; // avoid setState after dispose
+
+    if (result != null) {
+      setState(() {
+        _uploaded = result['id'].toString();
+      });
+    } else {
+      if (!mounted) return;
+      await _showErrorDialog('Failed to upload ${file.path.split('/').last}.');
+    }
+  }
+
+  MediaType _getContentType(String filePath) {
+    final mimeType = lookupMimeType(filePath);
+    if (mimeType != null) {
+      final parts = mimeType.split('/');
+      return MediaType(parts[0], parts[1]);
+    }
+    return MediaType('application', 'octet-stream');
+  }
+
   void _sendMessage() {
     if (_controller.text.trim().isEmpty && _pickedFiles.isEmpty) return;
-    widget.onSendMessage(_controller.text.trim(), _pickedFiles);
+    final attachmentToSend = _uploaded;
+    widget.onSendMessage(_controller.text.trim(), attachmentToSend ?? '');
     _controller.clear();
-    setState(() => _pickedFiles.clear());
+    setState(() {
+      _pickedFiles.clear();
+      _uploaded = null;
+    });
   }
 
   void _showAttachmentOptions() {
@@ -229,6 +328,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
       margin: const EdgeInsets.all(4),
       child: Stack(
         children: [
+          // Main content (image, video, or file)
           if (isImage)
             Image.file(file, width: 100, height: 100, fit: BoxFit.cover)
           else if (isVideo)
@@ -269,14 +369,19 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 ],
               ),
             ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
-              onPressed: () => _removeAttachment(index),
+
+          // Remove button
+          if (!_isUploading) // Only show remove button when not uploading
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
+                onPressed: () => _removeAttachment(index),
+              ),
             ),
-          ),
+
+          // Video play icon
           if (isVideo)
             const Positioned(
               bottom: 0,
@@ -286,6 +391,19 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 Icons.play_circle_filled,
                 color: Colors.white,
                 size: 30,
+              ),
+            ),
+
+          // Uploading overlay
+          if (_isUploading)
+            Container(
+              width: 100,
+              height: 100,
+              color: Colors.black54, // Semi-transparent overlay
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
               ),
             ),
         ],
@@ -323,15 +441,28 @@ class _ChatInputFieldState extends State<ChatInputField> {
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  decoration: const InputDecoration(
+                  enabled: !_isUploading,
+                  decoration: InputDecoration(
                     hintText: 'Type a message...',
                     border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color:
+                          _isUploading
+                              ? Colors.grey
+                              : null, // Grey out hint when disabled
+                    ),
+                  ),
+                  style: TextStyle(
+                    color:
+                        _isUploading
+                            ? Colors.grey
+                            : null, // Grey out text when disabled
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.send, color: Colors.green),
-                onPressed: _sendMessage,
+                onPressed: _isUploading ? null : _sendMessage,
               ),
             ],
           ),
