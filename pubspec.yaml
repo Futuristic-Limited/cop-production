@@ -50,6 +50,10 @@ dependencies:
   cached_network_image: ^3.4.1
   json_annotation: ^4.8.1
   badges: ^3.1.1
+  dio: ^5.4.0
+  video_player: ^2.5.1
+  flutter_pdfview: ^1.2.1
+
 
   # gallery_saver: any
 
