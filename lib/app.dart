@@ -47,12 +47,8 @@ class MyApp extends StatelessWidget {
         '/email_invites': (context) => const SendEmailInvitesScreen(),
         '/events': (context) => const EventsScreen(),
         '/guidelines': (context) => const GuidelinesScreen(),
-    '/landing': (context)=> const LandingPage(),
-    '/files': (context) => const UserUploadsScreen(),
-
-
-
-
+        '/landing': (context)=> const LandingPage(),
+        '/files': (context) => const UserUploadsScreen(),
         '/feed': (context) => const HomeScreen(),
       },
 
