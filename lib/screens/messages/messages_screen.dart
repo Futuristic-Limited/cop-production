@@ -111,7 +111,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     ),
                     title: Text(capitalizeFirstLetter(thread.participantName)),
                     subtitle: Text(
-                      stripHtml(thread.latestMessage),
+                      stripHtmlWithEmojis(thread.latestMessage),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -123,47 +123,33 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           formatTime(thread.latestDateSent),
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: Colors.green,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Icon(Icons.chat_bubble_outline),
-                            if (thread.unreadCount > 0)
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 20,
-                                    minHeight: 20,
-                                  ),
-                                  child: Text(
-                                    '${thread.unreadCount}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                        if (thread.unreadCount > 0)
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                thread.unreadCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                          ),
                       ],
                     ),
                     onTap: () async {
                       final currentUserId =
                           await SharedPrefsService.getUserId();
-                      print('Current user id one: $currentUserId');
 
                       int otherUserId;
                       if (thread.participantId == currentUserId.toString()) {

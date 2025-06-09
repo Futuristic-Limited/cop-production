@@ -63,7 +63,7 @@ class Message {
   factory Message.fromJson(Map<String, dynamic> json) {
     var attachmentsJson = json['attachments'] as List<dynamic>? ?? [];
     List<Attachment> attachmentsList =
-    attachmentsJson.map((e) => Attachment.fromJson(e)).toList();
+        attachmentsJson.map((e) => Attachment.fromJson(e)).toList();
 
     return Message(
       id: json['id'],
@@ -168,4 +168,11 @@ class Invite {
       accepted: json['accepted'] == '1',
     );
   }
+}
+
+class UploadedAttachment {
+  final int attachmentId;
+  final int messageMetaId;
+
+  UploadedAttachment({required this.attachmentId, required this.messageMetaId});
 }

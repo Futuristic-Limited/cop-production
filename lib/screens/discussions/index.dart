@@ -231,7 +231,6 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                       alignment: Alignment.center,
                       child: Text(
                         d.reply_count ?? '-',
-                        d.reply_count ?? '-',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
