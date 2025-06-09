@@ -52,6 +52,8 @@ class MyApp extends StatelessWidget {
 
 
 
+
+        '/feed': (context) => const HomeScreen(),
       },
 
       // Use onGenerateRoute for screens that need arguments
