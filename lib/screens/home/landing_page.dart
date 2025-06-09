@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/community_service.dart';
-import '../../cells/custom_app_bar.dart';
+// import '../../cells/custom_app_bar.dart';
+import '../../cells/landing_app_bar.dart';
 import '../../cells/banner_carousel.dart';
 import '../../cells/community_card.dart';
 import '../../cells/app_drawer.dart';

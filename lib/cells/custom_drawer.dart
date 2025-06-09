@@ -128,6 +128,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
       _animatedDrawerItem(4, context, Icons.message, 'Messages', '/messages'),
       _animatedDrawerItem(5, context, Icons.email, 'Email Invite', '/email_invites'),
       _animatedDrawerItem(6, context, Icons.person, 'Profile', '/profile'),
+      _animatedDrawerItem(7, context, Icons.insert_drive_file, 'Files', '/files'),
       const SizedBox(height: 8),
       SlideTransition(
         position: _slideAnimations[7],

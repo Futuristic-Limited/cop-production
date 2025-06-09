@@ -11,10 +11,11 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/auth/verify_reset_otp_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
-//import 'screens/home/landing_page.dart';
+import 'screens/home/landing_page.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
+import 'package:APHRC_COP/files/UserUploadsScreen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,6 +42,10 @@ class MyApp extends StatelessWidget {
         '/verify-reset-otp': (context) => const VerifyResetOtpScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/email_invites': (context) => const SendEmailInvitesScreen(),
+        '/landing': (context)=> const LandingPage(),
+        '/files': (context) => const UserUploadsScreen(),
+
+
       },
 
       // Use onGenerateRoute for screens that need arguments

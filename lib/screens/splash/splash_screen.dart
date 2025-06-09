@@ -42,7 +42,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
-          isLoggedIn ? '/home' : '/login',
+          isLoggedIn ? '/home' : '/landing',
         );
       }
     });
