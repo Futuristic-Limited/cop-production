@@ -393,7 +393,7 @@ class _ThreadScreenState extends State<ThreadScreen> {
                                 // Message
                                 if (text.isNotEmpty)
                                   Text(
-                                    stripHtml(text),
+                                    stripHtmlWithEmojis(text),
                                     style: TextStyle(
                                       color:
                                           isSentByUser
