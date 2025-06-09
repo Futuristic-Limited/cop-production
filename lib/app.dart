@@ -11,7 +11,7 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/auth/verify_reset_otp_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
-//import 'screens/home/landing_page.dart';
+import 'screens/home/landing_page.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
@@ -46,6 +46,8 @@ class MyApp extends StatelessWidget {
         '/email_invites': (context) => const SendEmailInvitesScreen(),
         '/events': (context) => const EventsScreen(),
         '/guidelines': (context) => const GuidelinesScreen(),
+    '/landing': (context)=> const LandingPage(),
+    '/files': (context) => const UserUploadsScreen(),
       },
 
       // Use onGenerateRoute for screens that need arguments
