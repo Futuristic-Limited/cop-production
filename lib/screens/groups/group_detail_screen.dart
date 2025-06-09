@@ -176,21 +176,22 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               },
             ),
             _buildMenuItem(
-              icon: Icons.info,
-              text: 'About',
-              index: 1,
-              onTap: () => _switchTab(1),
-            ),
-            _buildMenuItem(
               icon: Icons.forum,
               text: 'Discussions',
-              index: 2,
-              onTap: () => _switchTab(2),
+              index: 1,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/groups/discussions',
+                  arguments: {'slug': widget.group['slug']},
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.people,
               text: 'Members',
-              index: 3,
+              index: 2,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(
@@ -203,14 +204,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             _buildMenuItem(
               icon: Icons.folder,
               text: 'Files',
-              index: 4,
-              onTap: () => _switchTab(4),
+              index: 3,
+              onTap: () => _switchTab(3),
             ),
             const Divider(),
             _buildMenuItem(
               icon: Icons.person,
               text: 'Profile',
-              index: 5,
+              index: 4,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/profile');
@@ -219,7 +220,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             _buildMenuItem(
               icon: Icons.group,
               text: 'Groups',
-              index: 6,
+              index: 5,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/groups');

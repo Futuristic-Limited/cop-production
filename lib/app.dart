@@ -15,6 +15,7 @@ import 'screens/auth/reset_password_screen.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
+import 'screens/discussions/index.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -57,6 +58,14 @@ class MyApp extends StatelessWidget {
           final groupId = args['groupId'];
           return MaterialPageRoute(
             builder: (_) => GroupMembersScreen(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/discussions') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final group = args['slug'];
+          return MaterialPageRoute(
+            builder: (_) => DiscussionsScreen(groupd: group),
           );
         }
 
