@@ -2,10 +2,19 @@ import 'package:intl/intl.dart';
 
 String formatTime(DateTime dateTime) {
   final now = DateTime.now();
-  if (now.difference(dateTime).inDays == 0) {
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = DateTime(now.year, now.month, now.day - 1);
+  final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+  if (messageDate == today) {
+    // Today - show time only
     return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+  } else if (messageDate == yesterday) {
+    // Yesterday - show "Yesterday"
+    return "Yesterday";
   } else {
-    return "${dateTime.month}/${dateTime.day}";
+    // Older dates - show date in MM/DD/YYYY format
+    return "${dateTime.month}/${dateTime.day}/${dateTime.year}";
   }
 }
 
