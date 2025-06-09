@@ -103,6 +103,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
           'description': groupJson['description'],
           'avatarUrl': groupJson['avatarUrl'],
           'category': groupJson['category'],
+          'slug' : groupJson['slug'],
           'dateCreated': groupJson['dateCreated'],
         };
 
@@ -328,14 +329,14 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
             ),
             _buildMenuItem(
               icon: Icons.info,
-              text: 'About',
+              text: 'Group Details',
               index: 1,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.pushReplacementNamed(
                   context,
-                  '/groups/detail',
-                  arguments: {'groupId': widget.groupId},
+                  '/group-detail',
+                  arguments: {'group': _groupData},
                 );
               },
             ),
@@ -348,19 +349,8 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 Navigator.pushReplacementNamed(
                   context,
                   '/groups/discussions',
-                  arguments: {'groupId': widget.groupId},
+                  arguments: {'slug': _groupData?['slug']},
                 );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.people,
-              text: 'Members',
-              index: 3,
-              onTap: () {
-                Navigator.of(context).pop();
-                setState(() {
-                  _selectedIndex = 3;
-                });
               },
             ),
             _buildMenuItem(
