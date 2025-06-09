@@ -98,7 +98,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
         }
 
         _groupData = {
-          'id': groupJson['id'],
+          'id': int.tryParse(groupJson['id'].toString()) ?? 0,
           'name': groupJson['name'],
           'description': groupJson['description'],
           'avatarUrl': groupJson['avatarUrl'],
