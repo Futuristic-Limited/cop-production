@@ -16,7 +16,6 @@ import 'screens/home/landing_page.dart';
 import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
-// import 'screens/community_guidelines/community_guidelines_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

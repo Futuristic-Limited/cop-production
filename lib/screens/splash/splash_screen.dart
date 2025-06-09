@@ -36,10 +36,11 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
     Timer(const Duration(seconds: 4), () async {
       bool isLoggedIn = await SharedPrefsService.isLoggedIn();
+      print('User logged in: $isLoggedIn');
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
-          isLoggedIn ? '/home' : '/login',
+          isLoggedIn ? '/home' : '/landing',
         );
       }
     });
