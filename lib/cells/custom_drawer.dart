@@ -61,7 +61,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final topMargin = MediaQuery.of(context).size.height * 0.15;
+    final topMargin = MediaQuery.of(context).size.height * 0.135;
 
     return Drawer(
       backgroundColor: Colors.transparent,
@@ -72,18 +72,42 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                children: const [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.group,
-                      color: Color(0xFF8BC53F),
-                      size: 30,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black,
+                          blurRadius: 6,
+                          offset: Offset(2, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
+                    child: const Opacity(
+                      opacity: 0.85, // Set desired opacity
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.white,
+                        backgroundImage: AssetImage('assets/logo_aphrc_1.png'),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
+                  // CircleAvatar(
+                  //   radius: 28,
+                  //   backgroundColor: Colors.white,
+                  //   child: Icon(
+                  //     Icons.group,
+                  //     color: Color(0xFF8BC53F),
+                  //     size: 30,
+                  //   ),
+                  // ),
+                  const SizedBox(width: 12),
+                  const Expanded(
                     child: Text(
                       'Community Hub',
                       style: TextStyle(

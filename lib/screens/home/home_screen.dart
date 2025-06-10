@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             width: double.infinity,
             child: Card(
-              color: const Color(0xFFFFDD00),
+              color: Colors.black,
               elevation: 4,
               shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
               shape: RoundedRectangleBorder(
@@ -260,6 +260,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+
+
+
           isLoading
               ? const Expanded(
             child: Center(child: CircularProgressIndicator()),
