@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import '../../models/events_model.dart';
-import '../../services/token_preference.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -20,11 +20,18 @@ class _EventsScreenState extends State<EventsScreen> {
   bool isLoading = true;
   int selectedTabIndex = 0; // 0=All, 1=Upcoming, 2=Past
   String searchQuery = '';
+  Timer? _searchTimer;
 
   @override
   void initState() {
     super.initState();
     loadEvents();
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> loadEvents() async {
@@ -54,8 +61,20 @@ class _EventsScreenState extends State<EventsScreen> {
     }
   }
 
-  Future<void> searchEvents() async {
-    if (searchQuery.isEmpty) {
+  void _handleSearch(String query) {
+    _searchTimer?.cancel();
+    _searchTimer = Timer(const Duration(milliseconds: 500), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          searchQuery = query;
+        });
+        _executeSearch(query);
+      });
+    });
+  }
+
+  Future<void> _executeSearch(String query) async {
+    if (query.isEmpty) {
       loadEvents();
       return;
     }
@@ -65,7 +84,7 @@ class _EventsScreenState extends State<EventsScreen> {
     });
 
     try {
-      final results = await fetchSearchEvents(searchQuery);
+      final results = await fetchSearchEvents(query);
       setState(() {
         events = results;
         isLoading = false;
@@ -93,12 +112,8 @@ class _EventsScreenState extends State<EventsScreen> {
               showSearch(
                 context: context,
                 delegate: EventSearchDelegate(
-                  onSearch: (query) {
-                    setState(() {
-                      searchQuery = query;
-                    });
-                    searchEvents();
-                  },
+                  onSearch: _handleSearch,
+                  currentQuery: searchQuery,
                 ),
               );
             },
@@ -165,7 +180,9 @@ class _EventsScreenState extends State<EventsScreen> {
       return Center(
         child: Text(
           selectedTabIndex == 0
-              ? 'No events found'
+              ? searchQuery.isNotEmpty
+              ? 'No results for "$searchQuery"'
+              : 'No events found'
               : selectedTabIndex == 1
               ? 'No upcoming events'
               : 'No past events',
@@ -178,13 +195,12 @@ class _EventsScreenState extends State<EventsScreen> {
       itemCount: eventList.length,
       itemBuilder: (context, index) {
         final event = eventList[index];
-        return EventCard(event: event);
+        return _EventCard(event: event);
       },
     );
   }
 
-  // ================== API METHODS ==================
-
+  // API METHODS (same as before)
   Future<List<Event>> fetchAllEvents() async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
@@ -230,7 +246,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<List<Event>> fetchSearchEvents(String query) async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
-      Uri.parse('$apiUrl/guest/events/search?search=$query'),
+      Uri.parse('$apiUrl/guest/events/search?search=${Uri.encodeQueryComponent(query)}'),
     );
 
     if (response.statusCode == 200) {
@@ -240,26 +256,13 @@ class _EventsScreenState extends State<EventsScreen> {
       throw Exception('Failed to search events');
     }
   }
-
-  Future<Event> fetchEventDetails(int eventId) async {
-    final apiUrl = dotenv.env['API_URL'];
-    final response = await http.get(
-      Uri.parse('$apiUrl/guest/events/$eventId'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return Event.fromJson(data['data']);
-    } else {
-      throw Exception('Failed to load event details');
-    }
-  }
 }
 
-class EventCard extends StatelessWidget {
+// Event Card Widget (now defined as a private widget within the same file)
+class _EventCard extends StatelessWidget {
   final Event event;
 
-  const EventCard({super.key, required this.event});
+  const _EventCard({required this.event});
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +280,7 @@ class EventCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EventDetailScreen(event: event),
+              builder: (context) => _EventDetailScreen(event: event),
             ),
           );
         },
@@ -290,6 +293,11 @@ class EventCard extends StatelessWidget {
                 height: 150,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 150,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.error),
+                ),
               ),
             Padding(
               padding: const EdgeInsets.all(12.0),
@@ -313,7 +321,7 @@ class EventCard extends StatelessWidget {
                           DateFormat('MMM d, y').format(startDate),
                           style: const TextStyle(fontSize: 14),
                         ),
-                        if (endDate != null && !isSameDay(startDate, endDate))
+                        if (endDate != null && !_isSameDay(startDate, endDate))
                           Text(
                             ' - ${DateFormat('MMM d, y').format(endDate)}',
                             style: const TextStyle(fontSize: 14),
@@ -366,17 +374,18 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  bool isSameDay(DateTime date1, DateTime date2) {
+  bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
   }
 }
 
-class EventDetailScreen extends StatelessWidget {
+// Event Detail Screen (now defined as a private widget within the same file)
+class _EventDetailScreen extends StatelessWidget {
   final Event event;
 
-  const EventDetailScreen({super.key, required this.event});
+  const _EventDetailScreen({required this.event});
 
   @override
   Widget build(BuildContext context) {
@@ -401,6 +410,11 @@ class EventDetailScreen extends StatelessWidget {
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.error),
+                ),
               ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -453,41 +467,11 @@ class EventDetailScreen extends StatelessWidget {
                     event.content ?? 'No description available',
                     style: const TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 16),
-                  if (event.website != null) ...[
-                    const Text(
-                      'Website',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () {
-                        // Handle website URL tap
-                      },
-                      child: Text(
-                        event.website!,
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Handle RSVP or registration
-        },
-        icon: const Icon(Icons.event_available),
-        label: const Text('RSVP'),
       ),
     );
   }
@@ -504,7 +488,7 @@ class EventDetailScreen extends StatelessWidget {
   }
 
   String _buildDateRangeText(DateTime start, DateTime? end) {
-    if (end == null || isSameDay(start, end)) {
+    if (end == null || _isSameDay(start, end)) {
       return DateFormat('EEEE, MMMM d, y').format(start);
     } else {
       return '${DateFormat('EEEE, MMMM d, y').format(start)} - ${DateFormat('EEEE, MMMM d, y').format(end)}';
@@ -520,27 +504,36 @@ class EventDetailScreen extends StatelessWidget {
     }
   }
 
-  bool isSameDay(DateTime date1, DateTime date2) {
+  bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
   }
 }
 
-class EventSearchDelegate extends SearchDelegate {
+class EventSearchDelegate extends SearchDelegate<String> {
   final Function(String) onSearch;
+  final String currentQuery;
 
-  EventSearchDelegate({required this.onSearch});
+  EventSearchDelegate({
+    required this.onSearch,
+    required this.currentQuery,
+  });
+
+  @override
+  String get searchFieldLabel => 'Search events...';
 
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
-      ),
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            query = '';
+            onSearch(query);
+          },
+        ),
     ];
   }
 
@@ -549,7 +542,7 @@ class EventSearchDelegate extends SearchDelegate {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
-        close(context, '');
+        close(context, currentQuery);
       },
     );
   }
@@ -557,12 +550,17 @@ class EventSearchDelegate extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     onSearch(query);
-    return Container(); // Actual results are shown in the main screen
+    // Automatically close search after initiating the search
+    Future.microtask(() {
+      close(context, query);
+    });
+
+    return const SizedBox(); // Placeholder while search closes
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return Container(); // You can implement suggestions if needed
+    return Container();
   }
 }
 
