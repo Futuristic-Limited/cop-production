@@ -19,12 +19,12 @@ class DownloadUtil {
       final token = await SharedPrefsService.getAccessToken();
 
       if (token == null) {
-        print('❌ Download aborted: User is not authenticated.');
+        print('Download aborted: User is not authenticated.');
         return;
       }
 
       final url = '$apiUrl/user/download/$mediaId';
-      print('📥 Downloading from: $url');
+      print('Downloading from: $url');
 
       final options = Options(
         headers: {
@@ -44,13 +44,13 @@ class DownloadUtil {
         final file = File(filePath);
 
         await file.writeAsBytes(response.data!);
-        print('✅ File downloaded successfully to: $filePath');
+        print('File downloaded successfully to: $filePath');
       } else {
-        print('❌ Failed to download file. Status: ${response.statusCode}');
-        print('↪️ Message: ${response.statusMessage}');
+        print('Failed to download file. Status: ${response.statusCode}');
+        print('Message: ${response.statusMessage}');
       }
     } catch (e) {
-      print('❌ Exception during download: $e');
+      print('Exception during download: $e');
     }
   }
 }
