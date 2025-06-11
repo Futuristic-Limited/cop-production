@@ -355,21 +355,53 @@ class _HomeContentState extends State<HomeContent> {
                   }).toList(),
             ),
           ),
+
           const SizedBox(height: 10),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "OUR COMMUNITIES",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            width: double.infinity,
+            child: Card(
+              color: const Color(0xFFFFDD00),
+              elevation: 4,
+              shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  "APHRC COMMUNITIES",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
           ),
+
+
+
+          // const SizedBox(height: 10),
+          // const Padding(
+          //   padding: EdgeInsets.symmetric(horizontal: 12.0),
+          //   child: Align(
+          //     alignment: Alignment.centerLeft,
+          //     child: Text(
+          //       "APHRC COMMUNITIES",
+          //       style: TextStyle(
+          //         fontSize: 18,
+          //         fontWeight: FontWeight.bold,
+          //         color: Colors.green,
+          //       ),
+          //     ),
+          //   ),
+          // ),
+          //
+
+
           const SizedBox(height: 6),
           isLoading
               ? const Expanded(
