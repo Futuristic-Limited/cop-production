@@ -129,6 +129,15 @@ ThreadMessage _$ThreadMessageFromJson(Map<String, dynamic> json) =>
           (json['bp_media_ids'] as List<dynamic>?)
               ?.map((e) => BpMedia.fromJson(e as Map<String, dynamic>))
               .toList(),
+      mediaGif: json['media_gif'] as String?,
+      bpVideos:
+          (json['bp_videos'] as List<dynamic>?)
+              ?.map((e) => BpMedia.fromJson(e as Map<String, dynamic>))
+              .toList(),
+      bpDocuments:
+          (json['bp_documents'] as List<dynamic>?)
+              ?.map((e) => BpMedia.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
 
 Map<String, dynamic> _$ThreadMessageToJson(ThreadMessage instance) =>
@@ -141,6 +150,9 @@ Map<String, dynamic> _$ThreadMessageToJson(ThreadMessage instance) =>
       'date_sent': instance.dateSent,
       'sender_data': instance.senderData,
       'bp_media_ids': instance.bpMediaIds,
+      'media_gif': instance.mediaGif,
+      'bp_videos': instance.bpVideos,
+      'bp_documents': instance.bpDocuments,
     };
 
 SenderData _$SenderDataFromJson(Map<String, dynamic> json) => SenderData(
@@ -163,8 +175,8 @@ BpMedia _$BpMediaFromJson(Map<String, dynamic> json) => BpMedia(
   attachmentData: AttachmentData.fromJson(
     json['attachment_data'] as Map<String, dynamic>,
   ),
-  url: json['url'] as String,
-  downloadUrl: json['download_url'] as String,
+  url: json['url'] as String?,
+  downloadUrl: json['download_url'] as String?,
 );
 
 Map<String, dynamic> _$BpMediaToJson(BpMedia instance) => <String, dynamic>{

@@ -44,7 +44,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
       });
       return;
     }
-
     try {
       final response = await http.get(
         Uri.parse('$apiUrl/messages/fetch_inbox/$userId'),
