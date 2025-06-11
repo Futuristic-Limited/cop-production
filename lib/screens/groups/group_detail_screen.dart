@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../screens/discussions/index.dart';
+import 'group_side_menu.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -37,7 +38,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     final isWideScreen = screenWidth >= 768;
 
     return Scaffold(
-      drawer: _buildSideMenu(),
+      //drawer: _buildSideMenu(),
+      drawer: GroupSideMenu(
+        group: widget.group,
+        selectedIndex: _selectedIndex,
+        onTabSelected: _switchTab,
+      ),
       appBar: AppBar(
         title: const Text('Group Detail View'),
       ),
@@ -115,7 +121,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ],
             ),
           const SizedBox(height: 20),
+
+
           Html(data: descriptionText),
+
+
+
         ],
       ),
     );
@@ -154,83 +165,96 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     );
   }
 
-  Widget _buildSideMenu() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const DrawerHeader(
-              child: Text(
-                'Menu',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            _buildMenuItem(
-              icon: Icons.home,
-              text: 'Home',
-              index: 0,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/home');
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.forum,
-              text: 'Discussions',
-              index: 1,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(
-                  context,
-                  '/groups/discussions',
-                  arguments: {'slug': widget.group['slug']},
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.people,
-              text: 'Members',
-              index: 2,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(
-                  context,
-                  '/groups/members',
-                  arguments: {'groupId': widget.group['id']},
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.folder,
-              text: 'Files',
-              index: 3,
-              onTap: () => _switchTab(3),
-            ),
-            const Divider(),
-            _buildMenuItem(
-              icon: Icons.person,
-              text: 'Profile',
-              index: 4,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/profile');
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.group,
-              text: 'Groups',
-              index: 5,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/groups');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
+
+
+
+
+  // Widget _buildSideMenu() {
+  //   return Drawer(
+  //     child: SafeArea(
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.stretch,
+  //         children: [
+  //           const DrawerHeader(
+  //             child: Text(
+  //               'Menu',
+  //               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  //             ),
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.home,
+  //             text: 'Home',
+  //             index: 0,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushNamed(context, '/home');
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.forum,
+  //             text: 'Discussions',
+  //             index: 1,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushNamed(
+  //                 context,
+  //                 '/groups/discussions',
+  //                 arguments: {'slug': widget.group['slug']},
+  //               );
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.people,
+  //             text: 'Members',
+  //             index: 2,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushNamed(
+  //                 context,
+  //                 '/groups/members',
+  //                 arguments: {'groupId': widget.group['id']},
+  //               );
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.folder,
+  //             text: 'Files',
+  //             index: 3,
+  //             onTap: () => _switchTab(3),
+  //           ),
+  //           const Divider(),
+  //           _buildMenuItem(
+  //             icon: Icons.person,
+  //             text: 'Profile',
+  //             index: 4,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushNamed(context, '/profile');
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.group,
+  //             text: 'Groups',
+  //             index: 5,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushNamed(context, '/groups');
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+
+
+
+
+
+
+
 
   void _switchTab(int index) {
     Navigator.of(context).pop();
@@ -240,35 +264,37 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     });
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String text,
-    required int index,
-    required VoidCallback onTap,
-  }) {
-    final isSelected = (index == _selectedIndex);
+  // Widget _buildMenuItem({
+  //   required IconData icon,
+  //   required String text,
+  //   required int index,
+  //   required VoidCallback onTap,
+  // }) {
+  //   final isSelected = (index == _selectedIndex);
+  //
+  //   return ListTile(
+  //     selected: isSelected,
+  //     onTap: onTap,
+  //     title: Row(
+  //       children: [
+  //         Icon(
+  //           icon,
+  //           color: _aphrcGreen,
+  //         ),
+  //         const SizedBox(width: 12),
+  //         Expanded(
+  //           child: Text(
+  //             text,
+  //             style: TextStyle(
+  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  //               color: Colors.black,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-    return ListTile(
-      selected: isSelected,
-      onTap: onTap,
-      title: Row(
-        children: [
-          Icon(
-            icon,
-            color: _aphrcGreen,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
