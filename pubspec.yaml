@@ -72,6 +72,8 @@ dependencies:
   http_parser: ^4.1.2
   mime: ^2.0.0
   path: any
+  video_player: ^2.10.0
+  chewie: ^1.11.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

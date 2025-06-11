@@ -155,18 +155,33 @@ class UserAvatars {
 @JsonSerializable()
 class ThreadMessage {
   final int id;
+
   @JsonKey(name: 'thread_id')
   final int threadId;
+
   @JsonKey(name: 'sender_id')
   final int senderId;
+
   final Subject subject;
   final MessageContent message;
+
   @JsonKey(name: 'date_sent')
   final String dateSent;
+
   @JsonKey(name: 'sender_data')
   final SenderData senderData;
+
   @JsonKey(name: 'bp_media_ids')
   final List<BpMedia>? bpMediaIds;
+
+  @JsonKey(name: 'media_gif')
+  final String? mediaGif;
+
+  @JsonKey(name: 'bp_videos')
+  final List<BpMedia>? bpVideos;
+
+  @JsonKey(name: 'bp_documents')
+  final List<BpMedia>? bpDocuments;
 
   ThreadMessage({
     required this.id,
@@ -177,6 +192,9 @@ class ThreadMessage {
     required this.dateSent,
     required this.senderData,
     this.bpMediaIds,
+    this.mediaGif,
+    this.bpVideos,
+    this.bpDocuments,
   });
 
   factory ThreadMessage.fromJson(Map<String, dynamic> json) =>

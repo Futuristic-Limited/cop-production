@@ -102,7 +102,9 @@ class _UserUploadsScreenState extends State<UserUploadsScreen>
                 },
               )
                   : Icon(
-                type == 'video' ? Icons.video_library : Icons.insert_drive_file,
+                type == 'video'
+                    ? Icons.video_library
+                    : Icons.insert_drive_file,
                 size: 48,
                 color: Colors.green,
               ),
@@ -113,7 +115,8 @@ class _UserUploadsScreenState extends State<UserUploadsScreen>
               right: 0,
               bottom: 28, // leave space above download button
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 color: Colors.black54,
                 child: Text(
                   title,
@@ -135,10 +138,10 @@ class _UserUploadsScreenState extends State<UserUploadsScreen>
               child: IconButton(
                 icon: const Icon(Icons.download, size: 20),
                 onPressed: () async {
-                  await DownloadUtil.downloadFile(url, title);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Downloading $title...')),
                   );
+                  await DownloadUtil.downloadFileById(id, title);
                 },
               ),
             ),
