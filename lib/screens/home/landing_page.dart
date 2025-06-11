@@ -103,8 +103,6 @@ class _LandingPageState extends State<LandingPage> {
               child:
                   isLoading
                       ? const Center(child: CircularProgressIndicator())
-
-
                       :Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -118,26 +116,6 @@ class _LandingPageState extends State<LandingPage> {
                       ),
                     ),
                   ),
-
-
-                  // GridView.builder(
-                  //       padding: const EdgeInsets.symmetric(horizontal: 8),
-                  //       itemCount: communities.length,
-                  //       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  //         crossAxisCount: crossAxisCount,
-                  //         crossAxisSpacing: 10,
-                  //         mainAxisSpacing: 10,
-                  //         childAspectRatio: 0.85,
-                  //       ),
-                  //       itemBuilder: (context, index) {
-                  //         return CommunityCard(
-                  //           community: communities[index],
-                  //           communityService: communityService,
-                  //         );
-                  //       },
-                  //     ),
-
-
 
             ),
             Container(
