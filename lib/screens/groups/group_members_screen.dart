@@ -103,7 +103,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
           'description': groupJson['description'],
           'avatarUrl': groupJson['avatarUrl'],
           'category': groupJson['category'],
-          'slug' : groupJson['slug'],
+          'slug': groupJson['slug'],
           'dateCreated': groupJson['dateCreated'],
         };
 
@@ -209,8 +209,6 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   }
 
   String _getFollowLabel(String status) {
-    // status 'unfollow' means currently following, so button should say 'Unfollow'
-    // status 'follow' means currently NOT following, so button should say 'Follow'
     return status == 'unfollow' ? 'Unfollow' : 'Follow';
   }
 
@@ -221,7 +219,11 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Group Members')),
+      appBar: AppBar(
+        title: const Text('Group Members'),
+        backgroundColor: _aphrcGreen,
+        foregroundColor: Colors.white,
+      ),
       drawer: _buildSideMenu(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -240,6 +242,8 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
             ),
           ),
@@ -255,47 +259,78 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 itemCount: _filteredMembers.length,
                 itemBuilder: (context, index) {
                   final member = _filteredMembers[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                      CachedNetworkImageProvider(member.avatarUrl),
-                      backgroundColor: Colors.grey[200],
-                    ),
-                    title: Text(member.displayName),
-                    subtitle: Text('@${member.username}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () => _toggleFollowStatus(member),
-                          child: Text(
-                            _getFollowLabel(member.followStatus),
-                            style: TextStyle(
-                              color: _getFollowColor(member.followStatus),
+                    elevation: 2,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      leading: CircleAvatar(
+                        radius: 24,
+                        child: ClipOval(
+                          child: (member.avatarUrl != null && member.avatarUrl.isNotEmpty)
+                              ? CachedNetworkImage(
+                            imageUrl: member.avatarUrl,
+                            placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
+                            errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
+                            fit: BoxFit.cover,
+                            width: 48,
+                            height: 48,
+                          )
+                              : Image.asset('assets/default_avatar.png'),
+                        ),
+                      ),
+                      title: Text(
+                        member.displayName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text('@${member.username}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: _getFollowColor(
+                                  member.followStatus)
+                                  .withOpacity(0.1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(20),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _toggleFollowStatus(member),
+                            child: Text(
+                              _getFollowLabel(member.followStatus),
+                              style: TextStyle(
+                                color: _getFollowColor(
+                                    member.followStatus),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.message),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BuddyBossThreadScreen(
-                                  threadId: 0,
-                                  userId: member.id,
-                                  userName: member.displayName,
-                                  profilePicture: member.avatarUrl,
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.message,
+                                color: _aphrcGreen),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BuddyBossThreadScreen(
+                                        threadId: 0,
+                                        userId: member.id,
+                                        userName: member.displayName,
+                                        profilePicture: member.avatarUrl,
+                                      ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -312,10 +347,14 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const DrawerHeader(
-              child: Text(
+            DrawerHeader(
+              decoration: BoxDecoration(color: _aphrcGreen),
+              child: const Text(
                 'Menu',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
             ),
             _buildMenuItem(
@@ -366,7 +405,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                 );
               },
             ),
-            // const Divider(),
+            const Divider(),
             _buildMenuItem(
               icon: Icons.person,
               text: 'Profile',
