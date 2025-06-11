@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:http/http.dart' as http;
-import 'package:photo_view/photo_view.dart';
 // Models
 import 'package:APHRC_COP/models/buddyboss_thread.dart';
 
@@ -17,6 +16,10 @@ import 'package:APHRC_COP/utils/uppercase_first_letter.dart';
 
 // Widgets
 import 'package:APHRC_COP/screens/messages/chart_input_field.dart';
+
+import 'attachment_document.dart';
+import 'attachment_photo.dart';
+import 'attachment_video.dart';
 
 final apiUrl = dotenv.env['API_URL'];
 final buddyBossApiUrl = dotenv.env['WP_API_URL'];
@@ -237,7 +240,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                               color:
                                   isSentByUser
                                       ? const Color.fromARGB(255, 175, 174, 174)
-                                      : const Color(0xFF7BC148),
+                                      : const Color(0xFF7A7E7A),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
@@ -246,112 +249,24 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                 // Attachments (Photos)
                                 if (message.bpMediaIds != null &&
                                     message.bpMediaIds!.isNotEmpty)
-                                  Column(
-                                    children:
-                                        message.bpMediaIds!.map((media) {
-                                          return Column(
-                                            children: [
-                                              const SizedBox(height: 3),
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: SizedBox(
-                                                  height: 120, // Fixed height
-                                                  width:
-                                                      double
-                                                          .infinity, // Full width
-                                                  child: GestureDetector(
-                                                    onTap: () {
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder:
-                                                              (
-                                                                context,
-                                                              ) => Scaffold(
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .black,
-                                                                body: Stack(
-                                                                  children: [
-                                                                    Positioned.fill(
-                                                                      child: PhotoView(
-                                                                        imageProvider: NetworkImage(
-                                                                          media
-                                                                              .url!,
-                                                                          headers: {
-                                                                            'Authorization':
-                                                                                'Bearer $_accessToken',
-                                                                          },
-                                                                        ),
-                                                                        minScale:
-                                                                            PhotoViewComputedScale.contained,
-                                                                        maxScale:
-                                                                            PhotoViewComputedScale.covered *
-                                                                            2,
-                                                                        backgroundDecoration: const BoxDecoration(
-                                                                          color:
-                                                                              Colors.black,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    Positioned(
-                                                                      top:
-                                                                          MediaQuery.of(
-                                                                            context,
-                                                                          ).padding.top,
-                                                                      right: 16,
-                                                                      child: Row(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          // Download Button
-                                                                          IconButton(
-                                                                            icon: const Icon(
-                                                                              Icons.download,
-                                                                              color:
-                                                                                  Colors.white,
-                                                                            ),
-                                                                            onPressed:
-                                                                                () {},
-                                                                          ),
-                                                                          // Close Button
-                                                                          IconButton(
-                                                                            icon: const Icon(
-                                                                              Icons.close,
-                                                                              color:
-                                                                                  Colors.white,
-                                                                            ),
-                                                                            onPressed:
-                                                                                () => Navigator.pop(
-                                                                                  context,
-                                                                                ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: Image.network(
-                                                      media.url!,
-                                                      headers: {
-                                                        'Authorization':
-                                                            'Bearer $_accessToken',
-                                                      },
-                                                      fit: BoxFit.cover,
-                                                      height: 150,
-                                                      width: double.infinity,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        }).toList(),
+                                  MessageImageGallery(
+                                    mediaList: message.bpMediaIds!,
+                                    accessToken: _accessToken!,
+                                  ),
+
+                                // Attachments (Videos)
+                                if (message.bpVideos != null &&
+                                    message.bpVideos!.isNotEmpty)
+                                  MessageVideoGallery(
+                                    videoList: message.bpVideos!,
+                                    accessToken: _accessToken!,
+                                  ),
+                                // Attachments (Documents)
+                                if (message.bpDocuments != null &&
+                                    message.bpDocuments!.isNotEmpty)
+                                  MessageDocumentGallery(
+                                    documents: message.bpDocuments!,
+                                    accessToken: _accessToken!,
                                   ),
 
                                 // Message Text
@@ -362,12 +277,15 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                       color:
                                           isSentByUser
                                               ? Colors.white
-                                              : Colors.black,
+                                              : Colors.white,
                                       fontSize: 15,
                                     ),
                                   ),
 
                                 // Time
+                                SizedBox(
+                                  height: 5.0,
+                                ),
                                 Align(
                                   alignment: Alignment.bottomRight,
                                   child: Text(
@@ -377,7 +295,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
                                       color:
                                           isSentByUser
                                               ? Colors.white70
-                                              : Colors.black54,
+                                              : Colors.white70,
                                     ),
                                   ),
                                 ),
