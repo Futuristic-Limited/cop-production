@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:APHRC_COP/notifiers/profile_photo_notifier.dart';
 
 class SharedPrefsService {
   static Future<void> saveUserSession({
@@ -8,6 +9,7 @@ class SharedPrefsService {
     required String userName,
     required String userId,
     required String buddyBossToken,
+
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
@@ -73,7 +75,10 @@ class SharedPrefsService {
     await prefs.remove('token_expires_at');
     await prefs.remove('user_name');
     await prefs.remove('user_id');
+    await prefs.remove('profile_photo_url');
     await prefs.setBool('is_logged_in', false);
+    ProfilePhotoNotifier.profilePhotoUrl.value = '';
+
 
   }
 }
