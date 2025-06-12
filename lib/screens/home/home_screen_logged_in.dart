@@ -8,16 +8,18 @@ import '../../services/community_service.dart';
 import '../../services/shared_prefs_service.dart';
 import '../auth/login_screen.dart';
 
-import 'dashboard.dart';
+import 'my_dashboard.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenLoggedIn extends StatefulWidget {
+  final dynamic stype;
+
+  const HomeScreenLoggedIn({super.key, required this.stype});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreenLoggedIn> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreenLoggedIn> {
   int _selectedIndex = 0;
   bool isLoggedIn = false;
   final CommunityService communityService = CommunityService();
@@ -115,91 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex == 0
           ? Column(
         children: [
-          // 🔍 SEARCH BAR — moved to top
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: "Search communities...",
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon:
-                _searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                  },
-                )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
 
-          // Search Suggestions
-          if (_showSuggestions && filteredCommunities.isNotEmpty)
-            Container(
-              height: 150,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ListView.builder(
-                itemCount:
-                filteredCommunities.length > 5
-                    ? 5
-                    : filteredCommunities.length,
-                itemBuilder: (context, index) {
-                  final name = filteredCommunities[index]['name'];
-                  return ListTile(
-                    title: Text(name),
-                    onTap: () {
-                      final selected = filteredCommunities[index];
-                      setState(() {
-                        communities = [selected];
-                        filteredCommunities = [selected];
-                        _searchController.clear();
-                        _showSuggestions = false;
-                      });
-                      FocusScope.of(context).unfocus();
-                    },
-                  );
-                },
-              ),
-            ),
-
-          //  Clear filter
-          if (communities.length == 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final data =
-                    await communityService.fetchCommunities();
-                    setState(() {
-                      communities = data;
-                      filteredCommunities = data;
-                      _showSuggestions = false;
-                    });
-                  },
-                  icon: const Icon(Icons.clear_all, color: Colors.red),
-                  label: const Text(
-                    "Clear Filter",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-              ),
-            ),
-
-          ///load the new screenhere should be the default home
-          ///
-          ///
           Expanded(
-            child: CustomizedDashboard(),
+            child: MyDashboardScreen(stype:widget.stype),
           ),
 
         ],
@@ -216,11 +136,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pushNamed(context, '/home');
                 break;
               case 1:
-                //Navigator.pushNamed(context, '/feed');
+              //Navigator.pushNamed(context, '/feed');
                 const Center(child: Text('to do : News Feed'));
                 break;
               case 2:
-                //Navigator.pushNamed(context, '/notifications');
+              //Navigator.pushNamed(context, '/notifications');
                 const Center(child: Text('to do : Members holder'));
                 break;
               case 3:

@@ -51,7 +51,6 @@ dependencies:
   json_annotation: ^4.8.1
   badges: ^3.1.1
   dio: ^5.4.0
-  video_player: ^2.5.1
   flutter_pdfview: ^1.2.1
 
 
@@ -72,6 +71,8 @@ dependencies:
   http_parser: ^4.1.2
   mime: ^2.0.0
   path: any
+  video_player: ^2.10.0
+  chewie: ^1.11.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
