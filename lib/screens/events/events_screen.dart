@@ -204,7 +204,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<List<Event>> fetchAllEvents() async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
-      Uri.parse('$apiUrl/guest/events'),
+      Uri.parse('$apiUrl/events'),
     );
 
     if (response.statusCode == 200) {
@@ -218,7 +218,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<List<Event>> fetchUpcomingEvents() async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
-      Uri.parse('$apiUrl/guest/events/upcoming'),
+      Uri.parse('$apiUrl/events/upcoming'),
     );
 
     if (response.statusCode == 200) {
@@ -232,7 +232,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<List<Event>> fetchPastEvents() async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
-      Uri.parse('$apiUrl/guest/events/past'),
+      Uri.parse('$apiUrl/events/past'),
     );
 
     if (response.statusCode == 200) {
@@ -246,7 +246,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<List<Event>> fetchSearchEvents(String query) async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
-      Uri.parse('$apiUrl/guest/events/search?search=${Uri.encodeQueryComponent(query)}'),
+      Uri.parse('$apiUrl/events/search?search=${Uri.encodeQueryComponent(query)}'),
     );
 
     if (response.statusCode == 200) {
