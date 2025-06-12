@@ -7,11 +7,19 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:APHRC_COP/screens/auth/verify_otp_screen.dart';
 import 'package:APHRC_COP/components/forgot_password_link.dart';
 import 'package:APHRC_COP/screens/auth/forgot_password_screen.dart';
+import 'package:APHRC_COP/services/shared_prefs_service.dart';
+import 'package:APHRC_COP/services/token_preference.dart';
+import 'package:APHRC_COP/notifiers/profile_photo_notifier.dart';
+
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+final buddyBossApiUrl = dotenv.env['WP_API_URL'] ?? 'http://10.0.2.2:8000';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({  super.key,
+
+  });
+
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,41 +33,111 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  Future<void> generateAndSaveBuddyBossToken(String email, String password) async {
+    try {
+      final url = Uri.parse('${buddyBossApiUrl}wp-json/jwt-auth/v1/token');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        await SaveAccessTokenService.saveBuddyBossToken(token);
+        print("BuddyBoss token saved: $token");
+      } else {
+        print("Failed to fetch BuddyBoss token: ${response.body}");
+      }
+    } catch (e) {
+      print("Exception in BuddyBoss token generation: $e");
+      Fluttertoast.showToast(msg: "Error generating BuddyBoss token.");
+    }
+  }
+
   Future<void> loginUser(String email, String password) async {
     setState(() => _isLoading = true);
-
-    var url = Uri.parse('$apiUrl/login');
+    final url = Uri.parse('$apiUrl/log');
 
     try {
-      var response = await http.post(
+      final response = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: {'email': email, 'password': password},
       );
 
-      print("Login Response: ${response.body}");
+      final data = jsonDecode(response.body);
+      print("Login Response: $data");
 
-      var data = jsonDecode(response.body);
       setState(() => _isLoading = false);
 
-      if (data['status'] == 'pending_verification') {
-        Fluttertoast.showToast(msg: data['message']);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => VerifyOtpScreen(email: email, password: password),
-          ),
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        Fluttertoast.showToast(msg: "Logging you in...");
+
+
+        // Save session data
+        await SharedPrefsService.saveUserSession(
+          accessToken: data['tokens']['access_token'] ?? '',
+          refreshToken: data['tokens']['refresh_token'] ?? '',
+          tokenExpiresAt: data['tokens']['token_expires_at'] ?? '',
+          userName: data['user_name'] ?? '',
+          userId: data['user_id'].toString(),
+          buddyBossToken: data['token'] ?? '',
         );
-      } else {
-        Fluttertoast.showToast(msg: data['message']);
+
+        await SaveAccessTokenService.saveAccessToken(data['tokens']['access_token']);
+
+        // Generate and save BuddyBoss token
+        await generateAndSaveBuddyBossToken(email, password);
+
+        await fetchAndCacheProfilePhoto();
+        // Print tokens directly from the services (no new variable)
+        print("Token from SharedPrefsService: ${await SharedPrefsService.getAccessToken()}");
+        print("Token from SaveAccessTokenService: ${await SaveAccessTokenService.getAccessToken()}");
+
+        Navigator.pushReplacementNamed(context, '/home');
+
+      }
+      else {
+        Fluttertoast.showToast(
+          msg: data['message'] ?? "Login Failed.",
+          toastLength: Toast.LENGTH_LONG,
+        );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      print(" Login error: $e");
-      Fluttertoast.showToast(msg: "Login failed: $e");
+      Fluttertoast.showToast(msg: "Error in login: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+  Future<void> fetchAndCacheProfilePhoto() async {
+    final token = await SharedPrefsService.getAccessToken();
+    if (token == null) return;
+
+    final uri = Uri.parse('$apiUrl/photo'); // Or user/profile if different
+    final response = await http.get(uri, headers: {
+      'Authorization': 'Bearer $token',
+    });
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final photoUrl = jsonData['photo_url'];
+      print('Fetched profile photo URL: $photoUrl'); // <-- This prints the URL
+      if (photoUrl != null && photoUrl.toString().isNotEmpty) {
+        await SharedPrefsService.saveProfilePhotoUrl(photoUrl);
+        ProfilePhotoNotifier.profilePhotoUrl.value = photoUrl;
+      }
+    } else {
+      print('Failed to fetch profile photo. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+  }
+
 
   @override
   void dispose() {
@@ -165,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           onPressed: () {
                             setState(
-                              () => _obscurePassword = !_obscurePassword,
+                                  () => _obscurePassword = !_obscurePassword,
                             );
                           },
                         ),
@@ -214,17 +292,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 52,
                       child: ElevatedButton(
                         onPressed:
-                            _isLoading
-                                ? null
-                                : () {
-                                  if (_formKey.currentState!.validate()) {
-                                    final email =
-                                        emailTextController.text.trim();
-                                    final password =
-                                        passwordTextController.text.trim();
-                                    loginUser(email, password);
-                                  }
-                                },
+                        _isLoading
+                            ? null
+                            : () {
+                          if (_formKey.currentState!.validate()) {
+                            final email =
+                            emailTextController.text.trim();
+                            final password =
+                            passwordTextController.text.trim();
+                            loginUser(email, password);
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: apHrcGreen,
                           foregroundColor: Colors.white,
@@ -234,19 +312,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child:
-                            _isLoading
-                                ? const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                )
-                                : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        )
+                            : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 25),

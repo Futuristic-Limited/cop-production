@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/community_service.dart';
-// import '../../cells/custom_app_bar.dart';
 import '../../cells/landing_app_bar.dart';
 import '../../cells/banner_carousel.dart';
 import '../../cells/community_card.dart';
@@ -39,87 +38,85 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width > 800 ? 3 : (width > 600 ? 2 : 1);
-
     return Scaffold(
       appBar: CustomAppBar(),
       drawer: const AppDrawer(),
       body: SafeArea(
         child: Column(
           children: [
-            const BannerCarousel(),
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const BannerCarousel(),
 
+                    const SizedBox(height: 10),
 
-
-            const SizedBox(height: 10),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              width: double.infinity,
-              child: Card(
-                color: Colors.black,
-                elevation: 4,
-                shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    "APHRC COMMUNITIES",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFFFFF),
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
+                      width: double.infinity,
+                      child: Card(
+                        color: Colors.black,
+                        elevation: 4,
+                        shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            "APHRC COMMUNITIES",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFFFFFF),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+
+                    const SizedBox(height: 6),
+
+                    isLoading
+                        ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 50),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                        : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      itemCount: communities.length,
+                      itemBuilder:
+                          (context, index) =>
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: CommunityCard(
+                              community: communities[index],
+                              communityService: communityService,
+                            ),
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
-
-
-            // const SizedBox(height: 10),
-            // const Padding(
-            //   padding: EdgeInsets.symmetric(horizontal: 12.0),
-            //   child: Align(
-            //     alignment: Alignment.centerLeft,
-            //     child: Text(
-            //       "APHRC COMMUNITIES",
-            //       style: TextStyle(
-            //         fontSize: 18,
-            //         fontWeight: FontWeight.bold,
-            //         color: Colors.green,
-            //       ),
-            //     ),
-            //   ),
-            // ),
-
-
-
-            const SizedBox(height: 6),
-            Expanded(
-              child:
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      :Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                      itemCount: communities.length,
-                      itemBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: CommunityCard(
-                          community: communities[index],
-                          communityService: communityService,
-                        ),
-                      ),
-                    ),
-                  ),
-
-            ),
+            // Static footer
             Container(
-              color:  Colors.black,
+              color: Colors.black,
+              width: double.infinity,
               padding: const EdgeInsets.all(16),
               alignment: Alignment.center,
               child: const Text(
