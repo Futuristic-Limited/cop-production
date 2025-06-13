@@ -20,8 +20,8 @@ import 'package:APHRC_COP/files/UserUploadsScreen.dart';
 import 'screens/discussions/index.dart';
 import 'screens/events/events_screen.dart';
 import 'screens/guidelines/guidelines_screen.dart';
-
 import 'screens/home/my_dashboard.dart';
+import 'screens/activity/activity_feed_screen.dart'; // Import the activity feed screen
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -55,7 +55,8 @@ class MyApp extends StatelessWidget {
         '/feed': (context) => const HomeScreen(),
         '/home/community': (context) => const HomeScreenLoggedIn(stype: "community"),
         '/home/account': (context) => const HomeScreenLoggedIn(stype: "account"),
-        '/home/tools': (context) => const HomeScreenLoggedIn(stype: "tools")
+        '/home/tools': (context) => const HomeScreenLoggedIn(stype: "tools"),
+        '/activity/feeds': (context) => const ActivityFeedScreen(),
       },
 
       // Use onGenerateRoute for screens that need arguments
@@ -91,9 +92,11 @@ class MyApp extends StatelessWidget {
         //   );
         // }
 
-
         return null; // fallback
       },
     );
   }
 }
+
+
+

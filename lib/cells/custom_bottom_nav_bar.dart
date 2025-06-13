@@ -15,19 +15,34 @@ class CustomBottomNavBar extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: selectedIndex,
       onTap: (index) {
-        if (index == 3) { // Groups is at index 3
-          Navigator.pushNamed(context, '/groups');
-        } else {
-          onTap(index); // Handle other tabs normally
+        onTap(index); // Call the parent's onTap handler
+        switch (index) {
+          case 0: // Home
+            Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                    (route) => false
+            );
+            break;
+          case 1: // Activity Feed
+            Navigator.pushNamed(context, '/activity');
+            break;
+          case 2: // Notifications
+            Navigator.pushNamed(context, '/notifications');
+            break;
+          case 3: // Communities
+            Navigator.pushNamed(context, '/groups');
+            break;
         }
       },
       type: BottomNavigationBarType.fixed,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'Feeds'),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Members'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
+        BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Activity'),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Communities'),
       ],
     );
   }
 }
+
