@@ -32,6 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _lastUserName;
+  String? _lastUserEmail;
+  String? _lastUserPhotoUrl;
+  bool _showContinueAs = false;
+
 
   Future<void> generateAndSaveBuddyBossToken(String email, String password) async {
     try {
@@ -71,12 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = jsonDecode(response.body);
       print("Login Response: $data");
 
-      setState(() => _isLoading = false);
-
-
       if (response.statusCode == 200 && data['success'] == true) {
         Fluttertoast.showToast(msg: "Logging you in...");
-
 
         // Save session data
         await SharedPrefsService.saveUserSession(
@@ -88,20 +89,29 @@ class _LoginScreenState extends State<LoginScreen> {
           buddyBossToken: data['token'] ?? '',
         );
 
+        // Save raw access token
         await SaveAccessTokenService.saveAccessToken(data['tokens']['access_token']);
 
-        // Generate and save BuddyBoss token
+        // Fetch and cache profile photo before saving last user info
+        await fetchAndCacheProfilePhoto();
+
+        // Save last user info (email, name, and avatar)
+        await SharedPrefsService.saveLastUserInfo(
+          userName: data['user_name'] ?? '',
+          email: email,
+          photoUrl: ProfilePhotoNotifier.profilePhotoUrl.value ?? '',
+        );
+
+        // Generate and save BuddyBoss token if needed
         await generateAndSaveBuddyBossToken(email, password);
 
-        await fetchAndCacheProfilePhoto();
-        // Print tokens directly from the services (no new variable)
-        print("Token from SharedPrefsService: ${await SharedPrefsService.getAccessToken()}");
-        print("Token from SaveAccessTokenService: ${await SaveAccessTokenService.getAccessToken()}");
+        // Debugging tokens
+        print("Access Token (SharedPrefs): ${await SharedPrefsService.getAccessToken()}");
+        print("Access Token (SaveAccessTokenService): ${await SaveAccessTokenService.getAccessToken()}");
 
+        // Navigate to home page
         Navigator.pushReplacementNamed(context, '/home');
-
-      }
-      else {
+      } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",
           toastLength: Toast.LENGTH_LONG,
@@ -110,11 +120,10 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       Fluttertoast.showToast(msg: "Error in login: $e");
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
+
   Future<void> fetchAndCacheProfilePhoto() async {
     final token = await SharedPrefsService.getAccessToken();
     if (token == null) return;
@@ -135,6 +144,26 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       print('Failed to fetch profile photo. Status code: ${response.statusCode}');
       print('Response body: ${response.body}');
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    _loadLastUserInfo();
+  }
+
+  Future<void> _loadLastUserInfo() async {
+    final name = await SharedPrefsService.getLastUserName();
+    final email = await SharedPrefsService.getLastUserEmail();
+    final photo = await SharedPrefsService.getLastUserPhotoUrl();
+
+    if (name != null && email != null) {
+      setState(() {
+        _lastUserName = name;
+        _lastUserEmail = email;
+        _lastUserPhotoUrl = photo;
+        _showContinueAs = true;
+      });
     }
   }
 
@@ -188,6 +217,89 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
+                    if (_showContinueAs) ...[
+                      const SizedBox(height: 20),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          setState(() {
+                            emailTextController.text = _lastUserEmail!;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Email pre-filled. Please enter your password")),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: apHrcGreen, width: 1.5),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundImage: _lastUserPhotoUrl != null
+                                    ? NetworkImage(_lastUserPhotoUrl!)
+                                    : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Continue as $_lastUserName",
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _lastUserEmail ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            await SharedPrefsService.clearLastUser();
+                            setState(() => _showContinueAs = false);
+                          },
+                          icon: const Icon(Icons.switch_account_outlined, size: 18),
+                          label: const Text("Not you? Switch account"),
+                          style: TextButton.styleFrom(
+                            foregroundColor: apHrcGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+
+
+
                     const Text(
                       'Sign in to continue',
                       style: TextStyle(fontSize: 16, color: Colors.black54),
