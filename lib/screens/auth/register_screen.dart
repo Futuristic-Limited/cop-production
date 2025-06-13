@@ -4,9 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:APHRC_COP/screens/auth/verify_otp_screen.dart';
+import 'package:APHRC_COP/services/shared_prefs_service.dart';
+import 'package:APHRC_COP/services/token_preference.dart';
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+final buddyBossApiUrl = dotenv.env['WP_API_URL'] ?? 'http://10.0.2.2:8000';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -24,9 +26,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isPasswordVisible = false;
   bool isLoading = false;
 
+  Future<void> generateAndSaveBuddyBossToken(String email, String password) async {
+    try {
+      final url = Uri.parse('${buddyBossApiUrl}wp-json/jwt-auth/v1/token');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        await SaveAccessTokenService.saveBuddyBossToken(token);
+        print("BuddyBoss token saved: $token");
+      } else {
+        print("Failed to fetch BuddyBoss token: ${response.body}");
+      }
+    } catch (e) {
+      print("Exception in BuddyBoss token generation: $e");
+      Fluttertoast.showToast(msg: "Error generating BuddyBoss token.");
+    }
+  }
+
   Future<void> registerUser(String fullName, String email, String password) async {
     setState(() => isLoading = true);
-    var url = Uri.parse('$apiUrl/register');
+    var url = Uri.parse('$apiUrl/regist');
 
     try {
       var response = await http.post(
@@ -40,29 +66,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        Fluttertoast.showToast(msg: "Registration successful!");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VerifyOtpScreen(
-              email: email,
-              password: password,
-            ),
-          ),
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        Fluttertoast.showToast(msg: "Creating your account, please wait...");
+
+        // Save session using SharedPrefsService
+        await SharedPrefsService.saveUserSession(
+          accessToken: data['tokens']['access_token'] ?? '',
+          refreshToken: data['tokens']['refresh_token'] ?? '',
+          tokenExpiresAt: data['tokens']['token_expires_at'] ?? '',
+          userName: data['user_name'] ?? '',
+          userId: data['user_id'].toString(),
+          buddyBossToken: data['token'] ?? '',
         );
 
-      } else {
-        print("Backend error: ${data['message']}");
-        Fluttertoast.showToast(msg: data['message'] ?? "Registration failed.");
-      }
 
+        await SaveAccessTokenService.saveAccessToken(data['tokens']['access_token']);
+
+        // Generate and save BuddyBoss token
+        await generateAndSaveBuddyBossToken(email, password);
+
+        // Debugging prints
+        print("Access token (SharedPrefsService): ${await SharedPrefsService.getAccessToken()}");
+        print("Access token (SaveAccessTokenService): ${await SaveAccessTokenService.getAccessToken()}");
+
+        // Navigate to home screen
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Fluttertoast.showToast(
+          msg: data['message'] ?? "Registration failed.",
+          toastLength: Toast.LENGTH_LONG,
+        );
+      }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error: $e");
+      Fluttertoast.showToast(msg: "Error in registration: $e");
     } finally {
-      setState(() => isLoading = false);
+      setState(() {
+        isLoading = false;
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
