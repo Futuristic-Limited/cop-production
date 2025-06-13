@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:APHRC_COP/screens/communities/communities_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
@@ -82,6 +83,7 @@ class _MyAppState extends State<MyApp> {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
+          '/communities': (context) => const CommunitiesScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/messages': (context) => const MessagesScreen(),
           '/groups': (context) => const GroupsScreen(),

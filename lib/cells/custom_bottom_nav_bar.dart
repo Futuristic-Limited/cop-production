@@ -31,7 +31,7 @@ class CustomBottomNavBar extends StatelessWidget {
             Navigator.pushNamed(context, '/notifications');
             break;
           case 3: // Communities
-            Navigator.pushNamed(context, '/groups');
+            Navigator.pushNamed(context, '/communities');
             break;
         }
       },
