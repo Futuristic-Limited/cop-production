@@ -114,16 +114,43 @@ class _LandingPageState extends State<LandingPage> {
             ),
 
             // Static footer
+
+
             Container(
               color: Colors.black,
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               alignment: Alignment.center,
-              child: const Text(
-                '© 2025 APHRC Community of Practice. All rights reserved.',
-                style: TextStyle(color: Colors.white),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '© 2025 aphrc. All rights reserved.',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  SizedBox(height: 4), // Optional spacing between lines
+                  Text(
+                    'Designed & Developed by Futuristic Limited',
+                    style: TextStyle(color: Colors.white54), // Faint white
+                  ),
+                ],
               ),
             ),
+
+
+            // Container(
+            //   color: Colors.black,
+            //   width: double.infinity,
+            //   padding: const EdgeInsets.all(16),
+            //   alignment: Alignment.center,
+            //   child: const Text(
+            //     '© 2025 aphrc \n Developed by Futuristic Limited',
+            //     style: TextStyle(color: Colors.white),
+            //   ),
+            // ),
+
+
+
           ],
         ),
       ),
