@@ -62,10 +62,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleLogout() async {
     await SharedPrefsService.logout();
-    Navigator.of(
+    Navigator.pushAndRemoveUntil(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (Route<dynamic> route) => false,
+    );
   }
+
 
   void _onSearchChanged(String query) {
     setState(() {
@@ -108,7 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoggedIn: true,
         onLogout: () async {
           await SharedPrefsService.logout();
-          Navigator.pushReplacementNamed(context, '/login');
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (Route<dynamic> route) => false,
+          );
         },
       ),
       body:

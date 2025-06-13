@@ -15,6 +15,7 @@ class NotificationItem {
   final String message;
   final String dateNotified;
   final bool isNew;
+  final String action;
 
   NotificationItem({
     required this.id,
@@ -22,6 +23,7 @@ class NotificationItem {
     required this.message,
     required this.dateNotified,
     required this.isNew,
+    required this.action, // ← add this
   });
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class NotificationItem {
       message: json['message']?.toString() ?? '',
       dateNotified: json['date_notified']?.toString() ?? '',
       isNew: json['is_new'].toString() == '1',
+      action: json['action']?.toString() ?? '', // ← parse this
     );
   }
 }
@@ -131,6 +134,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     }
   }
 
+  void handleNotificationTap(NotificationItem notification) async {
+    final Map<String, String> actionRoutes = {
+      'new_message': '/messages',
+      'bb_messages_new': '/messages',
+      'friendship_request': '/feed',
+      'friendship_accepted': '/feed',
+      'group_invite': '/groups',
+      'new_membership_request': '/groups',
+      'bbp_new_reply_3782': '/events',
+      'bbp_new_reply_4017': '/events',
+      'bbp_new_reply_4044': '/events',
+      'reminder': '/reminders',
+    };
+
+    final route = actionRoutes[notification.action];
+    if (route != null) {
+      Navigator.pushNamed(context, route);
+      await markAsRead(notification.id);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No destination linked to this notification.')),
+      );
+    }
+  }
+
+
   Future<void> markAsRead(int id) async {
     if (id <= 0) return;
 
@@ -183,6 +212,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            onTap: () {
+              if (isSelectionMode) {
+                setState(() {
+                  if (selectedNotifications.contains(notification.id)) {
+                    selectedNotifications.remove(notification.id);
+                  } else {
+                    selectedNotifications.add(notification.id);
+                  }
+                });
+              } else {
+                handleNotificationTap(notification);
+              }
+            },
             leading: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -222,12 +264,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             ),
             trailing: isUnread && !isSelectionMode
                 ? TextButton(
-              onPressed: () => markAsRead(notification.id),
+              onPressed: () {
+                // 1. Mark as read
+                markAsRead(notification.id);
+
+                // 2. Action to route mapping
+                final actionRoutes = {
+                  'new_message': '/messages',
+                  'bb_messages_new': '/messages',
+                  'friendship_request': '/feed',
+                  'group_invite': '/groups',
+                  'forum_reply': '/events',
+
+                };
+
+                final route = actionRoutes[notification.action];
+
+                // 3. Navigate if route is valid and not current screen
+                if (route != null && ModalRoute.of(context)?.settings.name != route) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(context, rootNavigator: true).pushNamed(route);
+                  });
+                } else {
+                  print(' Unknown or same route for action: ${notification.action}');
+                }
+              },
               style: TextButton.styleFrom(foregroundColor: const Color(0xFF79C148)),
               child: const Text('Mark as read'),
             )
                 : null,
+
           ),
+
         ),
       ),
     );
@@ -326,54 +394,59 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
               child: TabBarView(
                 children: [
                   unread.isEmpty
-                      ? _emptyState(Icons.mark_email_unread_outlined, 'No new notifications')
-                      : SingleChildScrollView(
+
+                      ? _emptyState(Icons.mark_email_unread_outlined, 'No unread notifications')
+                      : ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: buildGroupedSection(unread, true),
+                    children: [buildGroupedSection(unread, true)],
                   ),
                   read.isEmpty
-                      ? _emptyState(Icons.inbox_outlined, 'No read notifications yet')
-                      : SingleChildScrollView(
+                      ? _emptyState(Icons.drafts_outlined, 'No read notifications')
+                      : ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: buildGroupedSection(read, false),
+                    children: [buildGroupedSection(read, false)],
                   ),
                 ],
               ),
             ),
-            if (isSelectionMode)
+
+            if (isSelectionMode && selectedNotifications.isNotEmpty)
               Positioned(
                 bottom: 20,
                 left: 16,
                 right: 16,
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: (selectedNotifications.length ==
-                          unread.length + read.length),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            selectedNotifications = {
-                              ...unread.map((n) => n.id),
-                              ...read.map((n) => n.id)
-                            };
-                          } else {
-                            selectedNotifications.clear();
-                          }
-                        });
-                      },
-                    ),
-                    const Text("Select All"),
-                    const Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: deleteSelectedNotifications,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Confirm Delete'),
+                        content: const Text('Are you sure you want to delete the selected notifications?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            child: const Text('Delete'),
+                          ),
+                        ],
                       ),
-                      icon: const Icon(Icons.delete),
-                      label: const Text('Delete'),
-                    ),
-                  ],
+                    );
+
+                    if (confirm == true) {
+                      await deleteSelectedNotifications();
+                    }
+                  },
+                  icon: const Icon(Icons.delete),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  label: const Text('Delete Selected'),
                 ),
               ),
           ],
