@@ -32,6 +32,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'APHRC COP',
       theme: ThemeData(primarySwatch: Colors.green),
+      //home: const AnimatedSplashScreen(),
+
       home: const AnimatedSplashScreen(),
 
       // Use named routes for simple screens
