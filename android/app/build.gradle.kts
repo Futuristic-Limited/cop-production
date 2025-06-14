@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.aphrc.futuristic"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.aphrc.futuristic"
         minSdk = 21 // unified for Kotlin DSL
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

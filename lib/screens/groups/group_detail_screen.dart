@@ -54,6 +54,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           _buildAboutSection(),
           _buildDiscussionSection(isWideScreen),
           _buildFilesSection(),
+          _buildFilesSection(),
         ],
       ),
     );
