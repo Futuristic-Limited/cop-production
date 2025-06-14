@@ -50,9 +50,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               Tab(text: 'All'),
               Tab(text: 'Groups'),
               Tab(text: 'Following'),
-              Tab(
-                text: 'Mentions',
-              ),
+              Tab(text: 'Mentions'),
               Tab(text: 'Followed Groups'),
             ],
           ),
