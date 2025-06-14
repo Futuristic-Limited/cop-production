@@ -23,7 +23,6 @@ import 'package:APHRC_COP/files/UserUploadsScreen.dart';
 import 'screens/discussions/index.dart';
 import 'screens/events/events_screen.dart';
 import 'screens/guidelines/guidelines_screen.dart';
-import 'screens/home/my_dashboard.dart';
 import 'screens/activity/activity_feed_screen.dart';
 
 class MyApp extends StatefulWidget {
