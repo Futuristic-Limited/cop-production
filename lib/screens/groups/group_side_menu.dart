@@ -136,8 +136,8 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
                           context,
-                          '/photos',
-                          arguments: {'slug': widget.group['slug']},
+                          '/groups/photos',
+                          arguments: {'groupId': widget.group['id']},
                         );
                       },
                     ),
@@ -167,8 +167,8 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
                           context,
-                          '/videos',
-                          arguments: {'slug': widget.group['slug']},
+                          '/groups/videos',
+                            arguments: {'groupId': widget.group['id']},
                         );
                       },
                     ),
@@ -188,13 +188,17 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                       },
                     ),
 
-
                     _animatedMenuItem(
                       icon: Icons.folder,
                       text: 'Documents',
-                      index: 3,
+                      index: 1,
                       onTap: () {
-                        widget.onTabSelected(3);
+                        Navigator.of(context).pop();
+                        Navigator.pushNamed(
+                          context,
+                          '/groups/documents',
+                          arguments: {'groupId': widget.group['id']},
+                        );
                       },
                     ),
 

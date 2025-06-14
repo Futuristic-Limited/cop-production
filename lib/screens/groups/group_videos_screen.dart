@@ -506,7 +506,7 @@ class _GroupVideosState extends State<GroupVideos> {
           : errorMessage != null
           ? Center(child: Text(errorMessage!))
           : activities.every((a) => a.media.isEmpty)
-          ? LottieEmpty(title: 'Upload documents')
+          ? LottieEmpty(title: 'Upload videos')
           : _buildVideoGrid(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showUploadBottomSheet(context),
