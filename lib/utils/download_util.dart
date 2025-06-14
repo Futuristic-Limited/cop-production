@@ -8,7 +8,7 @@ final apiUrl = (dotenv.env['WP_API_URL'] ?? 'https://futuristicdevlabs.digital/c
     .replaceAll(RegExp(r'/+$'), '');
 
 void debugPrintApiUrl() {
-  print('✅ Base API URL: $apiUrl');
+  print('Base API URL: $apiUrl');
 }
 
 class DownloadUtil {

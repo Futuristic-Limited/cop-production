@@ -51,7 +51,6 @@ dependencies:
   json_annotation: ^4.8.1
   badges: ^3.1.1
   dio: ^5.4.0
-  video_player: ^2.5.1
   flutter_pdfview: ^1.2.1
 
 
@@ -68,6 +67,7 @@ dependencies:
   flutter_platform_widgets: ^9.0.0
   file_picker: ^10.1.9
   video_thumbnail: ^0.5.6
+  device_info_plus: ^9.0.0
 
   http_parser: ^4.1.2
   mime: ^2.0.0

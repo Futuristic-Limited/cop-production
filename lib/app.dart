@@ -1,4 +1,7 @@
+import 'package:APHRC_COP/screens/groups/group_documents_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
+import 'package:APHRC_COP/screens/groups/group_photos_screen.dart';
+import 'package:APHRC_COP/screens/groups/group_videos_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -66,6 +69,30 @@ class MyApp extends StatelessWidget {
           final groupId = args['groupId'];
           return MaterialPageRoute(
             builder: (_) => GroupMembersScreen(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/photos') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupPhotos(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/videos') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupVideos(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/documents') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupDocuments(groupId: groupId),
           );
         }
 

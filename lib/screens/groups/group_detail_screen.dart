@@ -48,6 +48,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           _buildAboutSection(),
           _buildDiscussionSection(isWideScreen),
           _buildFilesSection(),
+          _buildFilesSection(),
         ],
       ),
     );
@@ -203,9 +204,42 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             ),
             _buildMenuItem(
               icon: Icons.folder,
-              text: 'Files',
+              text: 'Photos',
               index: 3,
-              onTap: () => _switchTab(3),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/groups/photos',
+                  arguments: {'groupId': widget.group['id']},
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.video_call_sharp,
+              text: 'Videos',
+              index: 3,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/groups/videos',
+                  arguments: {'groupId': widget.group['id']},
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.video_call_sharp,
+              text: 'Documents',
+              index: 3,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/groups/documents',
+                  arguments: {'groupId': widget.group['id']},
+                );
+              },
             ),
             const Divider(),
             _buildMenuItem(
