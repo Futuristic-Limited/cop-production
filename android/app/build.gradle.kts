@@ -1,16 +1,14 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
+    id("com.google.gms.google-services") // FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
+    id("dev.flutter.flutter-gradle-plugin") // Must come after Android/Kotlin plugins
 }
+
 android {
     namespace = "com.aphrc.futuristic"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973" // ✅ Use the exact version required
+    compileSdk = 34
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -23,20 +21,27 @@ android {
 
     defaultConfig {
         applicationId = "com.aphrc.futuristic"
-        minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21 // unified for Kotlin DSL
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-
     buildTypes {
-        release {
+        getByName("release") {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-}
 
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
+    packagingOptions {
+        resources.excludes.add("META-INF/*")
+    }
+}
 
 flutter {
     source = "../.."

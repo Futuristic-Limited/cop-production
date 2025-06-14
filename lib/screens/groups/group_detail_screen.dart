@@ -121,12 +121,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ],
             ),
           const SizedBox(height: 20),
-
-
           Html(data: descriptionText),
-
-
-
         ],
       ),
     );
