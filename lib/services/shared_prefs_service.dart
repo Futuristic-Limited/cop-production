@@ -1,6 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:APHRC_COP/notifiers/profile_photo_notifier.dart';
 
 class SharedPrefsService {
+  /// Save current logged-in user's session
   static Future<void> saveUserSession({
     required String accessToken,
     required String refreshToken,
@@ -19,11 +21,56 @@ class SharedPrefsService {
     await prefs.setString('buddy_boss_token', buddyBossToken);
   }
 
+  /// Save and also cache for last-user avatar
   static Future<void> saveProfilePhotoUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_photo_url', url);
+    await prefs.setString('last_user_photo_url', url); // cached for next login
   }
 
+  /// Save last user for "Continue as"
+  static Future<void> saveLastUser({required String email, required String userName}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_user_email', email);
+    await prefs.setString('last_user_name', userName);
+  }
+  /// Save last user info (name, email, and photo) for "Continue as" UI
+  static Future<void> saveLastUserInfo({
+    required String userName,
+    required String email,
+    required String photoUrl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_user_name', userName);
+    await prefs.setString('last_user_email', email);
+    await prefs.setString('last_user_photo_url', photoUrl);
+  }
+
+
+  /// Getters for last user info
+  static Future<String?> getLastUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last_user_email');
+  }
+
+  static Future<String?> getLastUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last_user_name');
+  }
+
+  static Future<String?> getLastUserPhotoUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last_user_photo_url');
+  }
+
+  static Future<void> clearLastUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('last_user_email');
+    await prefs.remove('last_user_name');
+    await prefs.remove('last_user_photo_url');
+  }
+
+  /// Individual accessors
   static Future<String?> getBuddyBossToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('buddy_boss_token');
@@ -64,8 +111,7 @@ class SharedPrefsService {
     return prefs.getBool('is_logged_in') ?? false;
   }
 
-
-  /// logout handler
+  /// Logout clears session but keeps last user for quick login
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
@@ -73,7 +119,17 @@ class SharedPrefsService {
     await prefs.remove('token_expires_at');
     await prefs.remove('user_name');
     await prefs.remove('user_id');
+    await prefs.remove('profile_photo_url');
     await prefs.setBool('is_logged_in', false);
 
+    ProfilePhotoNotifier.profilePhotoUrl.value = '';
+    // Do NOT clear last_user data here
+  }
+
+
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    ProfilePhotoNotifier.profilePhotoUrl.value = '';
   }
 }

@@ -8,6 +8,8 @@ import '../../services/community_service.dart';
 import '../../services/shared_prefs_service.dart';
 import '../auth/login_screen.dart';
 
+import 'dashboard.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -60,10 +62,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleLogout() async {
     await SharedPrefsService.logout();
-    Navigator.of(
+    Navigator.pushAndRemoveUntil(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (Route<dynamic> route) => false,
+    );
   }
+
 
   void _onSearchChanged(String query) {
     setState(() {
@@ -106,7 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoggedIn: true,
         onLogout: () async {
           await SharedPrefsService.logout();
-          Navigator.pushReplacementNamed(context, '/login');
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (Route<dynamic> route) => false,
+          );
         },
       ),
       body:
@@ -193,94 +202,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-          //  BANNER
-          SizedBox(
-            height: 200,
-            child: CarouselSlider(
-              options: CarouselOptions(
-                autoPlay: true,
-                enlargeCenterPage: true,
-                viewportFraction: 1.0,
-                aspectRatio: 16 / 9,
-              ),
-              items:
-              bannerImages.map((imagePath) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
-                );
-              }).toList(),
-            ),
+          ///load the new screenhere should be the default home
+          ///
+          ///
+          Expanded(
+            child: CustomizedDashboard(),
           ),
 
-          // const Padding(
-          //   padding: EdgeInsets.symmetric(
-          //     horizontal: 12.0,
-          //     vertical: 8,
-          //   ),
-          //   child: Align(
-          //     alignment: Alignment.centerLeft,
-          //     child: Text(
-          //       "OUR COMMUNITIES",
-          //       style: TextStyle(
-          //         fontSize: 18,
-          //         fontWeight: FontWeight.bold,
-          //         color: Colors.green,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          const SizedBox(height: 10),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            width: double.infinity,
-            child: Card(
-              color: Colors.black,
-              elevation: 4,
-              shadowColor: const Color(0xFF0BC148).withOpacity(0.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  "APHRC COMMUNITIES",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-
-
-
-
-          isLoading
-              ? const Expanded(
-            child: Center(child: CircularProgressIndicator()),
-          )
-              : Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              itemCount: communities.length,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: CommunityCard(
-                  community: communities[index],
-                  communityService: communityService,
-                ),
-              ),
-            ),
-          ),
         ],
       )
           : _screens[_selectedIndex],
@@ -309,12 +237,6 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
       ),
-      // bottomNavigationBar: CustomBottomNavBar(
-      //   selectedIndex: _selectedIndex,
-      //   onTap: (index) => setState(() => _selectedIndex = index),
-      // ),
-      //
-
 
     );
   }

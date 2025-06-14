@@ -138,6 +138,11 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
   List<Widget> _buildLoggedInItems(BuildContext context) {
     return [
       _animatedDrawerItem(0, context, Icons.home, 'Home', '/home'),
+      //_animatedDrawerItem(1, context, Icons.people, 'Community', '/home/community'),
+      _animatedDrawerItem(2, context, Icons.account_box, 'Account', '/home/account'),
+      _animatedDrawerItem(3, context, Icons.settings, 'Tools', '/home/tools'),
+
+     /*
       _animatedDrawerItem(1, context, Icons.settings, 'Settings', '/settings'),
       FutureBuilder<int>(
         future: _getUnreadNotificationCount(),
@@ -157,7 +162,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
       _animatedDrawerItem(4, context, Icons.message, 'Messages', '/messages'),
       _animatedDrawerItem(5, context, Icons.email, 'Email Invite', '/email_invites'),
       _animatedDrawerItem(6, context, Icons.person, 'Profile', '/profile'),
-      _animatedDrawerItem(7, context, Icons.insert_drive_file, 'Files', '/files'),
+      _animatedDrawerItem(7, context, Icons.insert_drive_file, 'Files', '/files'),*/
       const SizedBox(height: 8),
       SlideTransition(
         position: _slideAnimations[7],

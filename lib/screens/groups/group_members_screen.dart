@@ -6,8 +6,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/group_member_model.dart';
 import '../../services/token_preference.dart';
 import '../messages/chat_screen.dart';
+import 'group_side_menu.dart';
 
-class GroupMembersScreen extends StatefulWidget {
+class GroupMembersScreen extends StatefulWidget  {
   final int groupId;
 
   const GroupMembersScreen({super.key, required this.groupId});
@@ -16,7 +17,7 @@ class GroupMembersScreen extends StatefulWidget {
   State<GroupMembersScreen> createState() => _GroupMembersPageState();
 }
 
-class _GroupMembersPageState extends State<GroupMembersScreen> {
+class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProviderStateMixin  {
   int _selectedIndex = 2;
   bool _isLoading = true;
   String? _errorMessage;
@@ -25,17 +26,20 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   List<GroupMember> _filteredMembers = [];
   TextEditingController _searchController = TextEditingController();
   static const Color _aphrcGreen = Color(0xFF8BC53F);
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _fetchGroupMembers();
+    _tabController = TabController(length: 10, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -222,7 +226,14 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Group Members')),
-      drawer: _buildSideMenu(),
+      //drawer: _buildSideMenu(),
+
+      drawer: GroupSideMenu(
+        group: _groupData!,
+        selectedIndex: _selectedIndex,
+        onTabSelected: _switchTab,
+      ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : (_errorMessage != null)
@@ -306,116 +317,126 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
     );
   }
 
-  Widget _buildSideMenu() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const DrawerHeader(
-              child: Text(
-                'Menu',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            _buildMenuItem(
-              icon: Icons.home,
-              text: 'Home',
-              index: 0,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, '/home');
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.info,
-              text: 'Group Details',
-              index: 1,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(
-                  context,
-                  '/group-detail',
-                  arguments: {'group': _groupData},
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.forum,
-              text: 'Discussions',
-              index: 2,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(
-                  context,
-                  '/groups/discussions',
-                  arguments: {'slug': _groupData?['slug']},
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.folder,
-              text: 'Files',
-              index: 4,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(
-                  context,
-                  '/groups/files',
-                  arguments: {'groupId': widget.groupId},
-                );
-              },
-            ),
-            // const Divider(),
-            _buildMenuItem(
-              icon: Icons.person,
-              text: 'Profile',
-              index: 5,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, '/profile');
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.group,
-              text: 'Groups',
-              index: 6,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, '/groups');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  void _switchTab(int index) {
+    Navigator.of(context).pop();
+    setState(() {
+      _selectedIndex = index;
+      _tabController.index = index;
+    });
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String text,
-    required int index,
-    required VoidCallback onTap,
-  }) {
-    final bool isSelected = (index == _selectedIndex);
-    return ListTile(
-      selected: isSelected,
-      onTap: onTap,
-      title: Row(
-        children: [
-          Icon(icon, color: _aphrcGreen),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildSideMenu() {
+  //   return Drawer(
+  //     child: SafeArea(
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.stretch,
+  //         children: [
+  //           const DrawerHeader(
+  //             child: Text(
+  //               'Menu',
+  //               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  //             ),
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.home,
+  //             text: 'Home',
+  //             index: 0,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(context, '/home');
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.info,
+  //             text: 'Group Details',
+  //             index: 1,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(
+  //                 context,
+  //                 '/group-detail',
+  //                 arguments: {'group': _groupData},
+  //               );
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.forum,
+  //             text: 'Discussions',
+  //             index: 2,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(
+  //                 context,
+  //                 '/groups/discussions',
+  //                 arguments: {'slug': _groupData?['slug']},
+  //               );
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.folder,
+  //             text: 'Files',
+  //             index: 4,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(
+  //                 context,
+  //                 '/groups/files',
+  //                 arguments: {'groupId': widget.groupId},
+  //               );
+  //             },
+  //           ),
+  //           // const Divider(),
+  //           _buildMenuItem(
+  //             icon: Icons.person,
+  //             text: 'Profile',
+  //             index: 5,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(context, '/profile');
+  //             },
+  //           ),
+  //           _buildMenuItem(
+  //             icon: Icons.group,
+  //             text: 'Groups',
+  //             index: 6,
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //               Navigator.pushReplacementNamed(context, '/groups');
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  //
+  // Widget _buildMenuItem({
+  //   required IconData icon,
+  //   required String text,
+  //   required int index,
+  //   required VoidCallback onTap,
+  // }) {
+  //   final bool isSelected = (index == _selectedIndex);
+  //   return ListTile(
+  //     selected: isSelected,
+  //     onTap: onTap,
+  //     title: Row(
+  //       children: [
+  //         Icon(icon, color: _aphrcGreen),
+  //         const SizedBox(width: 12),
+  //         Expanded(
+  //           child: Text(
+  //             text,
+  //             style: TextStyle(
+  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  //               color: Colors.black,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+
 }
