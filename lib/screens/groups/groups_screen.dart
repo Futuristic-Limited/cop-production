@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -337,11 +338,37 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget _buildUserHeader(String joinDate, String status) {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundImage: NetworkImage(user!.avatar ?? ''),
-          onBackgroundImageError: (_, __) {},
+        // Modified avatar section only
+        user!.avatar != null && user!.avatar!.isNotEmpty
+            ? ClipOval(
+          child: CachedNetworkImage(
+            width: 60,
+            height: 60,
+            imageUrl: user!.avatar!,
+            placeholder: (context, url) => Image.asset(
+              'assets/default_avatar.png',
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+            errorWidget: (context, url, error) => Image.asset(
+              'assets/default_avatar.png',
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+            fit: BoxFit.cover,
+          ),
+        )
+            : ClipOval(
+          child: Image.asset(
+            'assets/default_avatar.png',
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+          ),
         ),
+        // Rest of the original code remains exactly the same
         const SizedBox(width: 16),
         Expanded(
           child: Column(
