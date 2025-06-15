@@ -38,9 +38,26 @@ class _MessageDocumentGalleryState extends State<MessageDocumentGallery> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              onTap: () {
+              onTap: () async {
                 final filename = doc.title ?? 'document.pdf';
-                downloadAndOpenFile(doc.url!, filename, widget.accessToken);
+
+                try {
+                  await downloadAndOpenFile(
+                    url: doc.url!,
+                    fileName: filename,
+                    token: widget.accessToken,
+                    context: context, // Make sure to pass context here
+                  );
+                } catch (e) {
+                  if (mounted) { // Check if widget is still in the tree
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to download: ${e.toString()}'),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ],

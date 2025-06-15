@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DocumentViewer extends StatelessWidget {

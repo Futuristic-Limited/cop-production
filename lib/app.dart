@@ -1,3 +1,7 @@
+import 'package:APHRC_COP/screens/groups/group_documents_screen.dart';
+import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
+import 'package:APHRC_COP/screens/groups/group_photos_screen.dart';
+import 'package:APHRC_COP/screens/groups/group_videos_screen.dart';
 import 'dart:async';
 import 'package:APHRC_COP/screens/communities/communities_screen.dart';
 import 'package:flutter/material.dart';
@@ -118,6 +122,37 @@ class _MyAppState extends State<MyApp> {
             );
           }
 
+        if (settings.name == '/groups/photos') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupPhotos(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/videos') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupVideos(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/documents') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final groupId = args['groupId'];
+          return MaterialPageRoute(
+            builder: (_) => GroupDocuments(groupId: groupId),
+          );
+        }
+
+        if (settings.name == '/groups/discussions') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final group = args['slug'];
+          return MaterialPageRoute(
+            builder: (_) => DiscussionsScreen(groupd: group),
+          );
+        }
           if (settings.name == '/groups/discussions') {
             final args = settings.arguments as Map<String, dynamic>;
             final group = args['slug'];
