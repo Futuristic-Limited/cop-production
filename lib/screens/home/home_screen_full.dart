@@ -382,8 +382,6 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ),
 
-
-
           // const SizedBox(height: 10),
           // const Padding(
           //   padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -400,7 +398,6 @@ class _HomeContentState extends State<HomeContent> {
           //   ),
           // ),
           //
-
 
           const SizedBox(height: 6),
           isLoading

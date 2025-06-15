@@ -72,7 +72,83 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return Column(
           children: [
-            // Removed the search bar and related widgets completely
+            // Search Bar
+            // Padding(
+            //   padding: const EdgeInsets.all(12.0),
+            //   child: TextField(
+            //     controller: _searchController,
+            //     onChanged: _onSearchChanged,
+            //     decoration: InputDecoration(
+            //       hintText: "Search communities...",
+            //       prefixIcon: const Icon(Icons.search),
+            //       suffixIcon: _searchController.text.isNotEmpty
+            //           ? IconButton(
+            //         icon: const Icon(Icons.clear),
+            //         onPressed: () {
+            //           _searchController.clear();
+            //           _onSearchChanged('');
+            //         },
+            //       )
+            //           : null,
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+
+            // Search Suggestions
+            if (_showSuggestions && filteredCommunities.isNotEmpty)
+              Container(
+                height: 150,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: ListView.builder(
+                  itemCount: filteredCommunities.length > 5
+                      ? 5
+                      : filteredCommunities.length,
+                  itemBuilder: (context, index) {
+                    final name = filteredCommunities[index]['name'];
+                    return ListTile(
+                      title: Text(name),
+                      onTap: () {
+                        final selected = filteredCommunities[index];
+                        setState(() {
+                          communities = [selected];
+                          filteredCommunities = [selected];
+                          _searchController.clear();
+                          _showSuggestions = false;
+                        });
+                        FocusScope.of(context).unfocus();
+                      },
+                    );
+                  },
+                ),
+              ),
+
+            // Clear filter
+            if (communities.length == 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final data = await communityService.fetchCommunities();
+                      setState(() {
+                        communities = data;
+                        filteredCommunities = data;
+                        _showSuggestions = false;
+                      });
+                    },
+                    icon: const Icon(Icons.clear_all, color: Colors.red),
+                    label: const Text(
+                      "Clear Filter",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
+              ),
+
             // Main Dashboard Content
             Expanded(
               child: CustomizedDashboard(),
@@ -128,5 +204,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-
