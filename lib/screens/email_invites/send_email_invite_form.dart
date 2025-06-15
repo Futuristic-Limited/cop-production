@@ -72,20 +72,21 @@ class _SendEmailInviteFormState extends State<SendEmailInviteForm> {
       );
 
       final Map<String, dynamic> data = json.decode(response.body);
-      final String errorMessage =
-          data['messages']?['error'] ?? 'Unknown error occurred';
-      if (response.statusCode == 200) {
+      final String messageData = data['message'] ?? 'Unknown error occurred';
+
+      if (response.statusCode == 200 && data['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: Colors.green),
+          SnackBar(content: Text(messageData), backgroundColor: Colors.green),
         );
         _nameController.clear();
         _emailController.clear();
         _messageController.clear();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+          SnackBar(content: Text(messageData), backgroundColor: Colors.red),
         );
       }
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -54,6 +54,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           _buildAboutSection(),
           _buildDiscussionSection(isWideScreen),
           _buildFilesSection(),
+          _buildFilesSection(),
         ],
       ),
     );
@@ -121,12 +122,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ],
             ),
           const SizedBox(height: 20),
-
-
           Html(data: descriptionText),
-
-
-
         ],
       ),
     );
