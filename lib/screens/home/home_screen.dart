@@ -73,29 +73,29 @@ class _HomeScreenState extends State<HomeScreen> {
         return Column(
           children: [
             // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: "Search communities...",
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.all(12.0),
+            //   child: TextField(
+            //     controller: _searchController,
+            //     onChanged: _onSearchChanged,
+            //     decoration: InputDecoration(
+            //       hintText: "Search communities...",
+            //       prefixIcon: const Icon(Icons.search),
+            //       suffixIcon: _searchController.text.isNotEmpty
+            //           ? IconButton(
+            //         icon: const Icon(Icons.clear),
+            //         onPressed: () {
+            //           _searchController.clear();
+            //           _onSearchChanged('');
+            //         },
+            //       )
+            //           : null,
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //     ),
+            //   ),
+            // ),
 
             // Search Suggestions
             if (_showSuggestions && filteredCommunities.isNotEmpty)
