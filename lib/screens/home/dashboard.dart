@@ -34,23 +34,23 @@ class _CustomizedDashboardState extends State<CustomizedDashboard>
       body: Column(
         children: [
           // Tab Bar with icons
-          Container(
-            alignment: Alignment.centerLeft,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: primaryColor,
-              unselectedLabelColor: Colors.grey[700],
-              indicatorColor: primaryColor,
-              indicatorWeight: 3,
-              isScrollable: true,
-              tabs: const [
-                Tab(icon: Icon(Icons.group), text: 'Communities'),
-                Tab(icon: Icon(Icons.timeline), text: 'Activity'),
-                Tab(icon: Icon(Icons.notifications), text: 'Notifications'),
-              ],
-            ),
-          ),
+          // Container(
+          //   alignment: Alignment.centerLeft,
+          //   margin: const EdgeInsets.symmetric(horizontal: 12),
+          //   child: TabBar(
+          //     controller: _tabController,
+          //     labelColor: primaryColor,
+          //     unselectedLabelColor: Colors.grey[700],
+          //     indicatorColor: primaryColor,
+          //     indicatorWeight: 3,
+          //     isScrollable: true,
+          //     tabs: const [
+          //       Tab(icon: Icon(Icons.group), text: 'Communities'),
+          //       Tab(icon: Icon(Icons.timeline), text: 'Activity'),
+          //       Tab(icon: Icon(Icons.notifications), text: 'Notifications'),
+          //     ],
+          //   ),
+          // ),
 
           const Divider(height: 1, thickness: 1, color: Color(0xFFE0E0E0)),
 

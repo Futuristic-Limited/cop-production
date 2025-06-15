@@ -127,20 +127,20 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                       },
                     ),
 
-                     //to do
-                    _animatedMenuItem(
-                      icon: Icons.add_a_photo,
-                      text: 'Photos',
-                      index: 1,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(
-                          context,
-                          '/groups/photos',
-                          arguments: {'groupId': widget.group['id']},
-                        );
-                      },
-                    ),
+                    //  //to do
+                    // _animatedMenuItem(
+                    //   icon: Icons.add_a_photo,
+                    //   text: 'Photos',
+                    //   index: 1,
+                    //   onTap: () {
+                    //     Navigator.of(context).pop();
+                    //     Navigator.pushNamed(
+                    //       context,
+                    //       '/groups/photos',
+                    //       arguments: {'groupId': widget.group['id']},
+                    //     );
+                    //   },
+                    // ),
 
 
                     _animatedMenuItem(
@@ -157,36 +157,36 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                       },
                     ),
 
-
-                    //to do
-                    _animatedMenuItem(
-                      icon: Icons.add_a_photo,
-                      text: 'Videos',
-                      index: 1,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(
-                          context,
-                          '/groups/videos',
-                            arguments: {'groupId': widget.group['id']},
-                        );
-                      },
-                    ),
-
-                    //to do
-                    _animatedMenuItem(
-                      icon: Icons.add_a_photo,
-                      text: 'Albums',
-                      index: 1,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(
-                          context,
-                          '/albums',
-                          arguments: {'slug': widget.group['slug']},
-                        );
-                      },
-                    ),
+                    //
+                    // //to do
+                    // _animatedMenuItem(
+                    //   icon: Icons.add_a_photo,
+                    //   text: 'Videos',
+                    //   index: 1,
+                    //   onTap: () {
+                    //     Navigator.of(context).pop();
+                    //     Navigator.pushNamed(
+                    //       context,
+                    //       '/groups/videos',
+                    //         arguments: {'groupId': widget.group['id']},
+                    //     );
+                    //   },
+                    // ),
+                    //
+                    // //to do
+                    // _animatedMenuItem(
+                    //   icon: Icons.add_a_photo,
+                    //   text: 'Albums',
+                    //   index: 1,
+                    //   onTap: () {
+                    //     Navigator.of(context).pop();
+                    //     Navigator.pushNamed(
+                    //       context,
+                    //       '/albums',
+                    //       arguments: {'slug': widget.group['slug']},
+                    //     );
+                    //   },
+                    // ),
 
                     _animatedMenuItem(
                       icon: Icons.folder,

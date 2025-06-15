@@ -45,7 +45,7 @@ class _MyDashboardScreenState extends State<MyDashboardScreen>
         return [
           _TabItem(icon: Icons.person, label: 'Profile'),
           _TabItem(icon: Icons.settings, label: 'Settings'),
-          _TabItem(icon: Icons.logout, label: 'Logout'),
+          //_TabItem(icon: Icons.logout, label: 'Logout'),
         ];
       case 'tools':
         return [

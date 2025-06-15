@@ -58,7 +58,8 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
   Future<void> submitReply() async {
     setState(() => isPosting = true);
     final success = await DiscussionService().postDiscussion(
-      titleController.text,
+      //titleController.text,
+      "discussion",
       descController.text,
       post_parent: widget.discussion.ID!,
       discussion: widget.discussion,
@@ -98,7 +99,7 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
                 ],
               ),
               Container(
-                color: const Color(0xFF7BC148),
+                //color: const Color(0xFF7BC148),
                 padding: const EdgeInsets.all(0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,10 +247,10 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
       children: [
         const Text('Comment on discussion', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        TextField(
-          controller: titleController,
-          decoration: const InputDecoration(labelText: 'Discussion Title', border: OutlineInputBorder()),
-        ),
+        // TextField(
+        //   controller: titleController,
+        //   decoration: const InputDecoration(labelText: 'Discussion Title', border: OutlineInputBorder()),
+        // ),
         const SizedBox(height: 12),
         TextField(
           controller: descController,
