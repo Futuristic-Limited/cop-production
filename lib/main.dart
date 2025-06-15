@@ -9,15 +9,4 @@ void main() async {
   runApp(const MyApp());
 }
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await dotenv.load(fileName: ".env");
-//
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//
-//   final accessToken = await TokenService.getAccessToken();
-//
-//   runApp(MyApp(initialRoute: accessToken != null ? '/groups' : '/login'));
-// }
+
