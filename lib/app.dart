@@ -3,9 +3,10 @@ import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_photos_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_videos_screen.dart';
 import 'dart:async';
+import 'package:APHRC_COP/screens/communities/communities_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
-
+import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -19,14 +20,14 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/auth/verify_reset_otp_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/home/landing_page.dart';
+import 'package:APHRC_COP/screens/email_invites/email_invites_screen.dart';
 import 'screens/splash/splash_screen.dart';
-import 'screens/email_invites/email_invites_screen.dart';
 import 'screens/groups/group_detail_screen.dart';
-import 'files/UserUploadsScreen.dart';
+import 'package:APHRC_COP/files/UserUploadsScreen.dart';
 import 'screens/discussions/index.dart';
 import 'screens/events/events_screen.dart';
 import 'screens/guidelines/guidelines_screen.dart';
-import 'screens/groups/group_members_screen.dart';
+import 'screens/activity/activity_feed_screen.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -57,9 +58,11 @@ class _MyAppState extends State<MyApp> {
     await SharedPrefsService.logout();
 
     // Then navigate to login screen and remove all previous routes
-    Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil('/login', (route) => false);
+    Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil(
+      '/login',
+          (route) => false,
+    );
   }
-
 
   @override
   void dispose() {
@@ -83,6 +86,7 @@ class _MyAppState extends State<MyApp> {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
+          '/communities': (context) => const CommunitiesScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/messages': (context) => const MessagesScreen(),
           '/groups': (context) => const GroupsScreen(),
@@ -100,6 +104,7 @@ class _MyAppState extends State<MyApp> {
           '/home/community': (context) => const HomeScreenLoggedIn(stype: "community"),
           '/home/account': (context) => const HomeScreenLoggedIn(stype: "account"),
           '/home/tools': (context) => const HomeScreenLoggedIn(stype: "tools"),
+          '/activity/feeds': (context) => const ActivityFeedScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/group-detail') {
@@ -156,9 +161,21 @@ class _MyAppState extends State<MyApp> {
             );
           }
 
-          return null;
+          // Uncomment if needed
+          // if (settings.name == '/home/community') {
+          //   final args = settings.arguments as Map<String, dynamic>;
+          //   final stype = args['type'];
+          //   return MaterialPageRoute(
+          //     builder: (_) => MyDashboardScreen(stype: stype),
+          //   );
+          // }
+
+          return null; // fallback
         },
       ),
     );
   }
 }
+
+
+

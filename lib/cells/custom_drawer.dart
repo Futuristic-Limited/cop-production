@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
@@ -142,7 +141,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
       _animatedDrawerItem(2, context, Icons.account_box, 'Account', '/home/account'),
       _animatedDrawerItem(3, context, Icons.settings, 'Tools', '/home/tools'),
 
-     /*
+      /*
       _animatedDrawerItem(1, context, Icons.settings, 'Settings', '/settings'),
       FutureBuilder<int>(
         future: _getUnreadNotificationCount(),

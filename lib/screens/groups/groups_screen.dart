@@ -53,62 +53,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
-  Widget _buildSideMenu() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const DrawerHeader(
-              child: Text(
-                'Menu',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            _buildMenuItem(icon: Icons.home, text: 'Home', index: 0),
-            _buildMenuItem(icon: Icons.timeline, text: 'Timeline', index: 1),
-            _buildMenuItem(icon: Icons.person, text: 'Profile', index: 2),
-            _buildMenuItem(icon: Icons.group, text: 'Groups', index: 3),
-            _buildMenuItem(icon: Icons.videocam, text: 'Videos', index: 4),
-            _buildMenuItem(icon: Icons.photo, text: 'Photos', index: 5),
-            _buildMenuItem(icon: Icons.forum, text: 'Forums', index: 6),
-            _buildMenuItem(icon: Icons.insert_drive_file, text: 'Documents', index: 7),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String text,
-    required int index,
-  }) {
-    final isSelected = (index == selectedSection);
-    return ListTile(
-      leading: Icon(icon, color: Colors.green),
-      title: Text(
-        text,
-        style: TextStyle(
-          color: Colors.black,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      onTap: () {
-        Navigator.of(context).pop();
-        if (index == 2) {
-          Navigator.pushNamed(context, '/profile');
-        } else {
-          setState(() {
-            selectedSection = index;
-            if (index != 3) selectedTabIndex = 0;
-          });
-        }
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -128,7 +72,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final userStatus = user!.active != null ? 'Active now' : 'Inactive';
 
     return Scaffold(
-      drawer: _buildSideMenu(),
       appBar: AppBar(
         title: Text(_titleForSection(selectedSection)),
         actions: [
@@ -303,8 +246,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         onTap: () {
                           Navigator.pushNamed(
                             context,
-                            '/group-detail',
-                            arguments: {'group': group.toJson()},
+                            // '/group-detail',
+                            // arguments: {'group': group.toJson()},
+                            '/groups/discussions',
+                            arguments: {'slug': group.toJson()["slug"]},
                           );
                         },
                         child: Text(

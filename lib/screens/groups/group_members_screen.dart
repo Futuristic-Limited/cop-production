@@ -6,9 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/group_member_model.dart';
 import '../../services/token_preference.dart';
 import '../messages/chat_screen.dart';
-import 'group_side_menu.dart';
 
-class GroupMembersScreen extends StatefulWidget  {
+class GroupMembersScreen extends StatefulWidget {
   final int groupId;
 
   const GroupMembersScreen({super.key, required this.groupId});
@@ -17,7 +16,7 @@ class GroupMembersScreen extends StatefulWidget  {
   State<GroupMembersScreen> createState() => _GroupMembersPageState();
 }
 
-class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProviderStateMixin  {
+class _GroupMembersPageState extends State<GroupMembersScreen> {
   int _selectedIndex = 2;
   bool _isLoading = true;
   String? _errorMessage;
@@ -26,20 +25,17 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
   List<GroupMember> _filteredMembers = [];
   TextEditingController _searchController = TextEditingController();
   static const Color _aphrcGreen = Color(0xFF8BC53F);
-  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _fetchGroupMembers();
-    _tabController = TabController(length: 10, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -107,7 +103,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
           'description': groupJson['description'],
           'avatarUrl': groupJson['avatarUrl'],
           'category': groupJson['category'],
-          'slug' : groupJson['slug'],
+          'slug': groupJson['slug'],
           'dateCreated': groupJson['dateCreated'],
         };
 
@@ -213,8 +209,6 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
   }
 
   String _getFollowLabel(String status) {
-    // status 'unfollow' means currently following, so button should say 'Unfollow'
-    // status 'follow' means currently NOT following, so button should say 'Follow'
     return status == 'unfollow' ? 'Unfollow' : 'Follow';
   }
 
@@ -225,15 +219,12 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Group Members')),
-      //drawer: _buildSideMenu(),
-
-      drawer: GroupSideMenu(
-        group: _groupData!,
-        selectedIndex: _selectedIndex,
-        onTabSelected: _switchTab,
+      appBar: AppBar(
+        title: const Text('Group Members'),
+        backgroundColor: _aphrcGreen,
+        foregroundColor: Colors.white,
       ),
-
+      drawer: _buildSideMenu(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : (_errorMessage != null)
@@ -251,6 +242,8 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
             ),
           ),
@@ -266,47 +259,78 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
                 itemCount: _filteredMembers.length,
                 itemBuilder: (context, index) {
                   final member = _filteredMembers[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                      CachedNetworkImageProvider(member.avatarUrl),
-                      backgroundColor: Colors.grey[200],
-                    ),
-                    title: Text(member.displayName),
-                    subtitle: Text('@${member.username}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () => _toggleFollowStatus(member),
-                          child: Text(
-                            _getFollowLabel(member.followStatus),
-                            style: TextStyle(
-                              color: _getFollowColor(member.followStatus),
+                    elevation: 2,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      leading: CircleAvatar(
+                        radius: 24,
+                        child: ClipOval(
+                          child: (member.avatarUrl != null && member.avatarUrl.isNotEmpty)
+                              ? CachedNetworkImage(
+                            imageUrl: member.avatarUrl,
+                            placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
+                            errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
+                            fit: BoxFit.cover,
+                            width: 48,
+                            height: 48,
+                          )
+                              : Image.asset('assets/default_avatar.png'),
+                        ),
+                      ),
+                      title: Text(
+                        member.displayName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text('@${member.username}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: _getFollowColor(
+                                  member.followStatus)
+                                  .withOpacity(0.1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(20),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _toggleFollowStatus(member),
+                            child: Text(
+                              _getFollowLabel(member.followStatus),
+                              style: TextStyle(
+                                color: _getFollowColor(
+                                    member.followStatus),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.message),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BuddyBossThreadScreen(
-                                  threadId: 0,
-                                  userId: member.id,
-                                  userName: member.displayName,
-                                  profilePicture: member.avatarUrl,
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.message,
+                                color: _aphrcGreen),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BuddyBossThreadScreen(
+                                        threadId: 0,
+                                        userId: member.id,
+                                        userName: member.displayName,
+                                        profilePicture: member.avatarUrl,
+                                      ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -317,126 +341,120 @@ class _GroupMembersPageState extends State<GroupMembersScreen> with TickerProvid
     );
   }
 
-  void _switchTab(int index) {
-    Navigator.of(context).pop();
-    setState(() {
-      _selectedIndex = index;
-      _tabController.index = index;
-    });
+  Widget _buildSideMenu() {
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: _aphrcGreen),
+              child: const Text(
+                'Menu',
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+            ),
+            _buildMenuItem(
+              icon: Icons.home,
+              text: 'Home',
+              index: 0,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.info,
+              text: 'Group Details',
+              index: 1,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/group-detail',
+                  arguments: {'group': _groupData},
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.forum,
+              text: 'Discussions',
+              index: 2,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/groups/discussions',
+                  arguments: {'slug': _groupData?['slug']},
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.folder,
+              text: 'Files',
+              index: 4,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/groups/files',
+                  arguments: {'groupId': widget.groupId},
+                );
+              },
+            ),
+            const Divider(),
+            _buildMenuItem(
+              icon: Icons.person,
+              text: 'Profile',
+              index: 5,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/profile');
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.group,
+              text: 'Groups',
+              index: 6,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/groups');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // Widget _buildSideMenu() {
-  //   return Drawer(
-  //     child: SafeArea(
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.stretch,
-  //         children: [
-  //           const DrawerHeader(
-  //             child: Text(
-  //               'Menu',
-  //               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-  //             ),
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.home,
-  //             text: 'Home',
-  //             index: 0,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(context, '/home');
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.info,
-  //             text: 'Group Details',
-  //             index: 1,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(
-  //                 context,
-  //                 '/group-detail',
-  //                 arguments: {'group': _groupData},
-  //               );
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.forum,
-  //             text: 'Discussions',
-  //             index: 2,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(
-  //                 context,
-  //                 '/groups/discussions',
-  //                 arguments: {'slug': _groupData?['slug']},
-  //               );
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.folder,
-  //             text: 'Files',
-  //             index: 4,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(
-  //                 context,
-  //                 '/groups/files',
-  //                 arguments: {'groupId': widget.groupId},
-  //               );
-  //             },
-  //           ),
-  //           // const Divider(),
-  //           _buildMenuItem(
-  //             icon: Icons.person,
-  //             text: 'Profile',
-  //             index: 5,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(context, '/profile');
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.group,
-  //             text: 'Groups',
-  //             index: 6,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushReplacementNamed(context, '/groups');
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-  //
-  // Widget _buildMenuItem({
-  //   required IconData icon,
-  //   required String text,
-  //   required int index,
-  //   required VoidCallback onTap,
-  // }) {
-  //   final bool isSelected = (index == _selectedIndex);
-  //   return ListTile(
-  //     selected: isSelected,
-  //     onTap: onTap,
-  //     title: Row(
-  //       children: [
-  //         Icon(icon, color: _aphrcGreen),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: Text(
-  //             text,
-  //             style: TextStyle(
-  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-  //               color: Colors.black,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-  //
-
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String text,
+    required int index,
+    required VoidCallback onTap,
+  }) {
+    final bool isSelected = (index == _selectedIndex);
+    return ListTile(
+      selected: isSelected,
+      onTap: onTap,
+      title: Row(
+        children: [
+          Icon(icon, color: _aphrcGreen),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
