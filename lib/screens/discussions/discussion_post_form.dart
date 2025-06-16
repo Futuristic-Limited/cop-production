@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:APHRC_COP/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http_parser/http_parser.dart';
@@ -288,6 +289,7 @@ class _PostFormWidgetState extends State<PostFormWidget> {
   }
 
   @override
+
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
@@ -295,18 +297,25 @@ class _PostFormWidgetState extends State<PostFormWidget> {
         children: [
           if (_isExpanded)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F0F0),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Media preview
+                  // Media preview with loading overlay
                   if (_mediaFiles.isNotEmpty)
-                    SizedBox(
+                    Container(
                       height: 80,
+                      margin: const EdgeInsets.only(bottom: 8),
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: _mediaFiles.length,
@@ -315,67 +324,92 @@ class _PostFormWidgetState extends State<PostFormWidget> {
                           final isImage = file.path.endsWith('.png') ||
                               file.path.endsWith('.jpg') ||
                               file.path.endsWith('.jpeg');
-                          return Stack(
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.all(6),
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: isImage
-                                    ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(file, fit: BoxFit.cover),
-                                )
-                                    : const Icon(Icons.insert_drive_file),
-                              ),
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _mediaFiles.removeAt(i)),
-                                  child: const CircleAvatar(
-                                    radius: 10,
-                                    backgroundColor: Colors.black54,
-                                    child: Icon(Icons.close, color: Colors.white, size: 12),
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                      width: 1,
+                                    ),
                                   ),
+                                  child: isImage
+                                      ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.file(file, fit: BoxFit.cover),
+                                  )
+                                      : const Center(child: Icon(Icons.insert_drive_file)),
                                 ),
-                              )
-                            ],
+
+                                // Uploading overlay
+                                if (_isUploading)
+                                  Container(
+                                    width: 70,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                // Close button (hidden during upload)
+                                if (!_isUploading)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _mediaFiles.removeAt(i)),
+                                      child: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.black54,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           );
                         },
                       ),
                     ),
 
-                  // Media Picker Buttons Row
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.image, color: Colors.green),
-                        onPressed: _pickImage,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.videocam, color: Colors.purple),
-                        onPressed: _pickVideo,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.attach_file, color: Colors.orange),
-                        onPressed: _pickFile,
-                      ),
-                    ],
-                  ),
-
-                  // Title Field (below media icons)
+                  // Title Field
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: TextField(
                       controller: _titleController,
@@ -384,81 +418,136 @@ class _PostFormWidgetState extends State<PostFormWidget> {
                       decoration: const InputDecoration(
                         hintText: "Enter title...",
                         border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-
                   ),
 
-                  // Description Field + Send Button
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              minHeight: 40,
-                              maxHeight: 120,
-                            ),
-                            child: Scrollbar(
-                              child: TextField(
-                                controller: _descController,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                style: const TextStyle(fontSize: 16),
-                                decoration: const InputDecoration(
-                                  hintText: "Type a message...",
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
+                  // Description Field
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: 40,
+                        maxHeight: 120,
+                      ),
+                      child: Scrollbar(
+                        child: TextField(
+                          controller: _descController,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: const InputDecoration(
+                            hintText: "Type a message...",
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
                           ),
                         ),
                       ),
-                      _isPosting
-                          ? const Padding(
-                        padding: EdgeInsets.only(left: 10, right: 10, bottom: 12),
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+
+                  // Bottom Action Row (File upload + Send button)
+                  Container(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // File upload icons
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.image,
+                                  color: Colors.green, size: 24),
+                              onPressed: _isUploading ? null : _pickImage,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.videocam,
+                                  color: Colors.purple, size: 24),
+                              onPressed: _isUploading ? null : _pickVideo,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.attach_file,
+                                  color: Colors.orange, size: 24),
+                              onPressed: _isUploading ? null : _pickFile,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ),
-                      )
-                          : IconButton(
-                        icon: const Icon(Icons.send, color: Colors.teal),
-                        onPressed: _postDiscussion,
-                        tooltip: 'Send',
-                      ),
-                    ],
+
+                        // Send button
+                        _isPosting
+                            ? const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                            : IconButton(
+                          icon: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.aphrcGreen,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          onPressed: _postDiscussion,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
           // Toggle Visibility Arrow
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: GestureDetector(
-              onTap: () => setState(() => _isExpanded = !_isExpanded),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                width: double.infinity,
-                color: Colors.grey.shade200,
-                child: Icon(
-                  _isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                  color: Colors.grey[600],
+          GestureDetector(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(_isExpanded ? 0 : 12),
+                  bottomRight: Radius.circular(_isExpanded ? 0 : 12),
                 ),
+              ),
+              child: Icon(
+                _isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                color: Colors.grey[600],
+                size: 24,
               ),
             ),
           ),
