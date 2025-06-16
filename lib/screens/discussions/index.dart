@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import '../../services/discussions_service.dart';
 import '../../models/discussions_model.dart';
 import 'discussion_detail_screen.dart';
@@ -135,10 +136,12 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        d.post_content ?? '',
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                      // Text(
+                      //   d.post_content ?? '',
+                      //   style: const TextStyle(fontSize: 12),
+                      // ),
+
+                      Html(data:  d.post_content ?? ''),
                       const SizedBox(height: 8),
                       Row(
                         children: [

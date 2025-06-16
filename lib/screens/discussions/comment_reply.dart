@@ -21,7 +21,8 @@ class _CommentReplyState extends State<CommentReply> {
     setState(() => isSubmitting = true);
 
     final success = await DiscussionService().postDiscussion(
-      titleController.text,
+      //titleController.text,
+      "my title",
       descController.text,
       post_parent: widget.post_parent,
       discussion: widget.discussion,
@@ -53,10 +54,10 @@ class _CommentReplyState extends State<CommentReply> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
+              // TextField(
+              //   controller: titleController,
+              //   decoration: const InputDecoration(labelText: 'Title'),
+              // ),
               const SizedBox(height: 10),
               TextField(
                 controller: descController,
