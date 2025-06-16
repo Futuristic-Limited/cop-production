@@ -11,6 +11,7 @@ class ActivityItem {
   final DateTime dateRecorded;
   final String privacy;
   final String status;
+  final ActivityUser? user;
 
   ActivityItem({
     this.id = 0,
@@ -25,9 +26,17 @@ class ActivityItem {
     DateTime? dateRecorded,
     this.privacy = 'public',
     this.status = 'published',
+    this.user,
   }) : dateRecorded = dateRecorded ?? DateTime.now();
 
   factory ActivityItem.fromJson(Map<String, dynamic> json) {
+    // Filter out sensitive user data
+    final userJson = json['user'] != null ? Map<String, dynamic>.from(json['user']) : null;
+    if (userJson != null) {
+      userJson.removeWhere((key, value) =>
+          ['user_pass', 'access_token', 'refresh_token', 'token_expires_at', 'refresh_token_expires_at'].contains(key));
+    }
+
     return ActivityItem(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       userId: int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
@@ -41,14 +50,38 @@ class ActivityItem {
       dateRecorded: DateTime.tryParse(json['date_recorded']?.toString() ?? '') ?? DateTime.now(),
       privacy: json['privacy']?.toString() ?? 'public',
       status: json['status']?.toString() ?? 'published',
+      user: userJson != null ? ActivityUser.fromJson(userJson) : null,
     );
   }
 
-  // Add this getter for username (you'll need to implement user lookup separately)
-  String get username => 'User $userId';
+  String get username => user?.displayName ?? 'User $userId';
+  String? get userAvatar => user?.avatarUrl;
+}
 
-  // Add this getter for avatar (you'll need to implement avatar lookup separately)
-  String? get userAvatar => null;
+class ActivityUser {
+  final int id;
+  final String userLogin;
+  final String userNicename;
+  final String displayName;
+  final String? avatarUrl;
+
+  ActivityUser({
+    required this.id,
+    required this.userLogin,
+    required this.userNicename,
+    required this.displayName,
+    this.avatarUrl,
+  });
+
+  factory ActivityUser.fromJson(Map<String, dynamic> json) {
+    return ActivityUser(
+      id: int.tryParse(json['ID']?.toString() ?? '0') ?? 0,
+      userLogin: json['user_login']?.toString() ?? '',
+      userNicename: json['user_nicename']?.toString() ?? '',
+      displayName: json['display_name']?.toString() ?? '',
+      avatarUrl: json['avatar_url']?.toString(),
+    );
+  }
 }
 
 
