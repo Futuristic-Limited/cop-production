@@ -202,10 +202,17 @@ class _GroupPhotosState extends State<GroupPhotos> {
               backgroundColor: Colors.green,
             ),
           );
-        } else {
+        } else if(response.statusCode == 403){
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unexpected error occurred'),
+              content: Text('You are not a member of the group'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unexpected error'),
               backgroundColor: Colors.red,
             ),
           );
@@ -346,6 +353,8 @@ class _GroupPhotosState extends State<GroupPhotos> {
                       ),
                       const SizedBox(height: 16),
                     ],
+                    Text(uploadPhotoText),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _descriptionController,
                       cursorColor: AppColors.aphrcGreen,
@@ -415,7 +424,7 @@ class _GroupPhotosState extends State<GroupPhotos> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              onPressed: isSaving ? null : _saveActivityPhoto,
+                              onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
                               child: isSaving
                                   ? const SizedBox(
                                 height: 20,

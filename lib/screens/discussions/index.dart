@@ -6,7 +6,8 @@ import 'discussion_post_form.dart';
 
 class DiscussionsScreen extends StatefulWidget {
   final String groupd;
-  const DiscussionsScreen({super.key, required this.groupd});
+  final String? groupId;
+  const DiscussionsScreen({super.key, required this.groupd, this.groupId});
 
   @override
   State<DiscussionsScreen> createState() => _DiscussionsScreenState();
@@ -72,6 +73,8 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
               visible: _isFormVisible,
               child: PostFormWidget(
                 groupId: widget.groupd,
+                communityId: widget.groupId ?? "",
+
                 onPostSuccess: fetchDiscussions,
               ),
             ),
