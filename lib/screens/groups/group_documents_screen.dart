@@ -286,6 +286,9 @@ class _GroupPhotosState extends State<GroupDocuments> {
                   const SizedBox(height: 16),
                 ],
 
+                Text(uploadDocumentText),
+                const SizedBox(height: 8),
+
                 TextField(
                   controller: _descriptionController,
                   cursorColor: AppColors.aphrcGreen,

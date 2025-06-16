@@ -130,7 +130,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildDiscussionSection(bool isWideScreen) {
     final groupSlug = widget.group['slug'] ?? 'default-group';
-    return DiscussionsScreen(groupd: groupSlug);
+    final groupId = widget.group['groupId'] ?? '20';
+    return DiscussionsScreen(groupd: groupSlug, groupId: groupId);
   }
 
   Widget _buildFilesSection() {
