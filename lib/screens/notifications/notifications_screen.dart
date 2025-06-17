@@ -355,8 +355,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Notifications'),
-          backgroundColor: const Color(0xFF79C148),
+          //title: const Text('Notifications'),
+          //backgroundColor: const Color(0xFF79C148),
           actions: [
             if (!isLoading && (unread.isNotEmpty || read.isNotEmpty))
               IconButton(
