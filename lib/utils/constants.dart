@@ -6,6 +6,11 @@ final String sendEmailInviteDesc =
 final String recipientName = 'Recipient Name';
 final String recipientEmail = 'Recipient Email';
 final String message = 'Message';
+final String groupVideoTitle = 'Group Videos';
+final String uploadVideoText = 'Upload Video';
+final String videoTextFieldPlaceholder = 'Write something about your video';
+final String uploadDocumentText = 'Upload Document';
+final String uploadPhotoText = 'Upload Photo';
 final String sendInviteButton = 'Send Invite';
 class AppColors {
   static const Color aphrcGreen = Color(0xFF8BC53F);

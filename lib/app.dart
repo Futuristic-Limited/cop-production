@@ -148,18 +148,21 @@ class _MyAppState extends State<MyApp> {
 
         if (settings.name == '/groups/discussions') {
           final args = settings.arguments as Map<String, dynamic>;
+          print('the settings, ${settings.arguments}');
           final group = args['slug'];
+          final groupId = args['groupId'];
           return MaterialPageRoute(
-            builder: (_) => DiscussionsScreen(groupd: group),
+            builder: (_) => DiscussionsScreen(groupd: group, groupId: groupId),
           );
         }
-          if (settings.name == '/groups/discussions') {
-            final args = settings.arguments as Map<String, dynamic>;
-            final group = args['slug'];
-            return MaterialPageRoute(
-              builder: (_) => DiscussionsScreen(groupd: group),
-            );
-          }
+          // if (settings.name == '/groups/discussions') {
+          //   print('The settings is here $settings');
+          //   final args = settings.arguments as Map<String, dynamic>;
+          //   final group = args['slug'];
+          //   return MaterialPageRoute(
+          //     builder: (_) => DiscussionsScreen(groupd: group),
+          //   );
+          // }
 
           // Uncomment if needed
           // if (settings.name == '/home/community') {
