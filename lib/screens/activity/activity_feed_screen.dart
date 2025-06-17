@@ -932,9 +932,12 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                           _replyController.clear();
                           Navigator.pop(context);
                           _loadData();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Reply posted successfully')),
+                          );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to add reply: $e')),
+                            SnackBar(content: Text('Failed to post reply: $e')),
                           );
                         }
                       }

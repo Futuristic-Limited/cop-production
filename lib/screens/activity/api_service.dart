@@ -184,21 +184,61 @@ class ApiService {
     }
   }
 
+  // Future<ActivityComment> replyToComment(String commentId, String content) async {
+  //   try {
+  //     final apiUrl = dotenv.env['API_URL'];
+  //     final response = await http.post(
+  //       Uri.parse('${apiUrl}/feed/comment/reply/$commentId'),
+  //       headers: await _getHeaders(),
+  //       body: jsonEncode({'content': content}),
+  //     );
+  //
+  //     if (response.statusCode == 201) {
+  //       return ActivityComment.fromJson(jsonDecode(response.body));
+  //     } else {
+  //       throw Exception('Failed to add reply: ${response.statusCode}');
+  //     }
+  //   } catch (e, stackTrace) {
+  //     _handleError('replyToComment', e, stackTrace);
+  //     rethrow;
+  //   }
+  // }
+
   Future<ActivityComment> replyToComment(String commentId, String content) async {
     try {
       final apiUrl = dotenv.env['API_URL'];
+      print('Attempting to reply to comment $commentId');
+      print('API URL: $apiUrl');
+      print('Content being sent: $content');
+
+      final headers = await _getHeaders();
+      print('Headers: $headers');
+
+      final body = jsonEncode({'content': content});
+      print('Request body: $body');
+
+      final uri = Uri.parse('${apiUrl}/feed/comment/reply/$commentId');
+      print('Full URL: ${uri.toString()}');
+
       final response = await http.post(
-        Uri.parse('${apiUrl}/feed/comment/reply/$commentId'),
-        headers: await _getHeaders(),
-        body: jsonEncode({'content': content}),
+        uri,
+        headers: headers,
+        body: body,
       );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Response headers: ${response.headers}');
 
       if (response.statusCode == 201) {
         return ActivityComment.fromJson(jsonDecode(response.body));
       } else {
-        throw Exception('Failed to add reply: ${response.statusCode}');
+        throw Exception('Failed to add reply: ${response.statusCode}. Response: ${response.body}');
       }
     } catch (e, stackTrace) {
+      print('Detailed error in replyToComment:');
+      print('Error: $e');
+      print('Stack trace: $stackTrace');
       _handleError('replyToComment', e, stackTrace);
       rethrow;
     }
