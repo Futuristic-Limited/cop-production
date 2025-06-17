@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -23,7 +22,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
   bool isLoading = true;
   String sortBy = 'Recently Active';
   int selectedSection = 3;
-  int selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -67,65 +65,36 @@ class _GroupsScreenState extends State<GroupsScreen> {
       );
     }
 
-    final userJoinDate = user!.joined != null
-        ? 'Joined ${SimpleDateFormatter.formatMonthYear(DateTime.parse(user!.joined!))}'
-        : 'Join date unknown';
-    final userStatus = user!.active != null ? 'Active now' : 'Inactive';
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titleForSection(selectedSection)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sync),
-            tooltip: 'Sync',
-            onPressed: () {
-              loadUserAndGroups();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Syncing groups and invitations...')),
-              );
-            },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_titleForSection(selectedSection)),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'My Groups'),
+              Tab(text: 'Invitations'),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (selectedSection == 3) ...[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildUserHeader(userJoinDate, userStatus),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.sync),
+              tooltip: 'Sync',
+              onPressed: () {
+                loadUserAndGroups();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Syncing groups and invitations...')),
+                );
+              },
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ToggleButtons(
-                isSelected: [selectedTabIndex == 0, selectedTabIndex == 1],
-                onPressed: (index) {
-                  setState(() {
-                    selectedTabIndex = index;
-                  });
-                },
-                borderRadius: BorderRadius.circular(8),
-                selectedColor: Colors.white,
-                fillColor: Colors.green,
-                color: Colors.black,
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text("My Groups"),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text("Invitations"),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
-          Expanded(
-            child: _buildSectionBody(userJoinDate, userStatus),
-          ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            _buildGroupsList(),
+            _buildInvitesList(),
+          ],
+        ),
       ),
     );
   }
@@ -139,7 +108,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       case 2:
         return 'Profile';
       case 3:
-        return 'Groups';
+        return 'My Groups';
       case 4:
         return 'Videos';
       case 5:
@@ -162,7 +131,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       case 2:
         return _buildProfilePlaceholder();
       case 3:
-        return selectedTabIndex == 0 ? _buildGroupsList() : _buildInvitesList();
+        return _buildGroupsList();
       case 4:
         return _buildVideosPlaceholder();
       case 5:
@@ -247,8 +216,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         onTap: () {
                           Navigator.pushNamed(
                             context,
-                            // '/group-detail',
-                            // arguments: {'group': group.toJson()},
                             '/groups/discussions',
                             arguments: {'slug': group.toJson()["slug"]},
                           );
@@ -334,65 +301,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
       child: Center(child: Text(text, style: const TextStyle(color: Colors.black))),
     );
   }
-
-  Widget _buildUserHeader(String joinDate, String status) {
-    return Row(
-      children: [
-        // Modified avatar section only
-        user!.avatar != null && user!.avatar!.isNotEmpty
-            ? ClipOval(
-          child: CachedNetworkImage(
-            width: 60,
-            height: 60,
-            imageUrl: user!.avatar!,
-            placeholder: (context, url) => Image.asset(
-              'assets/default_avatar.png',
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
-            errorWidget: (context, url, error) => Image.asset(
-              'assets/default_avatar.png',
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
-            fit: BoxFit.cover,
-          ),
-        )
-            : ClipOval(
-          child: Image.asset(
-            'assets/default_avatar.png',
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-          ),
-        ),
-        // Rest of the original code remains exactly the same
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(user!.name ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-              Text(joinDate, style: const TextStyle(color: Colors.black)),
-              Text(status, style: const TextStyle(color: Colors.green)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text('${user!.followers ?? 0} followers', style: const TextStyle(color: Colors.black)),
-                  const SizedBox(width: 16),
-                  Text('${user!.following ?? 0} following', style: const TextStyle(color: Colors.black)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ================== API METHODS ==================
 
   Future<User> fetchUser() async {
     final apiUrl = dotenv.env['API_URL'];
@@ -509,3 +417,5 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 }
+
+
