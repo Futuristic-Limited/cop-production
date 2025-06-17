@@ -177,8 +177,8 @@ class _UserUploadsScreenState extends State<UserUploadsScreen>
       child: Scaffold(
         backgroundColor: const Color(0xFFF9F9F9),
         appBar: AppBar(
-          title: const Text('Files'),
-          backgroundColor: const Color(0xFF79C148),
+          //title: const Text('Files'),
+         // backgroundColor: const Color(0xFF79C148),
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.image), text: "Photos"),
