@@ -1,6 +1,8 @@
 // Helper function to format date
 import 'package:flutter/material.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:intl/intl.dart';
+import 'package:mime/mime.dart';
 
 import '../models/group_documents_model.dart';
 
@@ -45,6 +47,16 @@ Color getDocumentColor(String type) {
       return Colors.grey;
   }
 }
+
+MediaType getContentType(String filePath) {
+  final mimeType = lookupMimeType(filePath);
+  if (mimeType != null) {
+    final parts = mimeType.split('/');
+    return MediaType(parts[0], parts[1]);
+  }
+  return MediaType('application', 'octet-stream');
+}
+
 
 // Function to handle download
 void downloadDocument(DocumentItem document) {

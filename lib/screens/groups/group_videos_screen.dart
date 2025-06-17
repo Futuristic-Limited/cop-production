@@ -55,7 +55,7 @@ class _GroupVideosState extends State<GroupVideos> {
   }
 
   Future<void> _init() async {
-    await _fetchGroupPhotos(widget.groupId);
+    await _fetchGroupVideos(widget.groupId);
   }
 
   MediaType _getContentType(String filePath) {
@@ -87,7 +87,7 @@ class _GroupVideosState extends State<GroupVideos> {
   }
 
 
-  Future<void> _fetchGroupPhotos(int groupId) async {
+  Future<void> _fetchGroupVideos(int groupId) async {
     await _getAccessToken();
     try {
       if (mounted) {
@@ -106,24 +106,8 @@ class _GroupVideosState extends State<GroupVideos> {
       );
 
       if (mounted) {
-        print('Response from the API, ${response.body}');
         if (response.statusCode == 200) {
           final List<dynamic> jsonData = jsonDecode(response.body);
-          var response2 = jsonData.map((item) => GroupActivityVideo.fromJson(item)).toList();
-          for (var video in response2) {
-            print('ID: ${video.id}');
-            print('Type: ${video.userLogin}');
-            print('URL: ${video.groupName}');
-            print('Thumbnail: ${video.media}');
-            for (var media in video.media) {
-              print('  Media ID: ${media.id}');
-              print('  Media Type: ${media.type}');
-              print('  Media URL: ${media.url}');
-              print('  Media Thumbnail: ${media.thumb}');
-              print('  Duration: ${media.duration}');
-            }
-          }
-
           setState(() {
             activities = jsonData.map((item) => GroupActivityVideo.fromJson(item)).toList();
             _isLoading = false;
@@ -189,6 +173,7 @@ class _GroupVideosState extends State<GroupVideos> {
       final responseData = await response.stream.bytesToString();
       final jsonData = json.decode(responseData);
 
+      print('Uploading response, $responseData');
       if (response.statusCode == 201) {
         _uploadNotifier.value = false;
         if (mounted) setState(() => _isLoadingUpload = false);
@@ -231,7 +216,7 @@ class _GroupVideosState extends State<GroupVideos> {
 
       if (mounted) {
         if (response.statusCode == 200) {
-          await _fetchGroupPhotos(widget.groupId);
+          await _fetchGroupVideos(widget.groupId);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -390,6 +375,7 @@ class _GroupVideosState extends State<GroupVideos> {
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     ),
+
                                   ),
                               ],
                             ),
@@ -399,12 +385,14 @@ class _GroupVideosState extends State<GroupVideos> {
                       ),
                       const SizedBox(height: 16),
                     ],
+                    Text(uploadVideoText),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _descriptionController,
                       cursorColor: AppColors.aphrcGreen,
                       style: const TextStyle(color: AppColors.aphrcGreen),
                       decoration: InputDecoration(
-                        labelText: 'Write something about your video',
+                        labelText: videoTextFieldPlaceholder,
                         labelStyle: const TextStyle(color: AppColors.aphrcGreen),
                         border: const OutlineInputBorder(),
                         focusedBorder: OutlineInputBorder(
@@ -427,8 +415,8 @@ class _GroupVideosState extends State<GroupVideos> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('Gallery'),
+                              icon: const Icon(Icons.video_call_outlined),
+                              label: const Text('Video'),
                               onPressed: () => _pickVideo(ImageSource.gallery),
                             ),
                           ),
@@ -443,8 +431,8 @@ class _GroupVideosState extends State<GroupVideos> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('Camera'),
+                              icon: const Icon(Icons.video_call),
+                              label: const Text('Record'),
                               onPressed: () => _pickVideo(ImageSource.camera),
                             ),
                           ),
@@ -468,7 +456,7 @@ class _GroupVideosState extends State<GroupVideos> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              onPressed: isSaving ? null : _saveActivityPhoto,
+                              onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
                               child: isSaving
                                   ? const SizedBox(
                                 height: 20,

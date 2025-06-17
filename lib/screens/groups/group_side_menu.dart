@@ -126,23 +126,6 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         );
                       },
                     ),
-
-                    //  //to do
-                    // _animatedMenuItem(
-                    //   icon: Icons.add_a_photo,
-                    //   text: 'Photos',
-                    //   index: 1,
-                    //   onTap: () {
-                    //     Navigator.of(context).pop();
-                    //     Navigator.pushNamed(
-                    //       context,
-                    //       '/groups/photos',
-                    //       arguments: {'groupId': widget.group['id']},
-                    //     );
-                    //   },
-                    // ),
-
-
                     _animatedMenuItem(
                       icon: Icons.people,
                       text: 'Members',
@@ -156,38 +139,33 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         );
                       },
                     ),
+                    _animatedMenuItem(
+                      icon: Icons.add_a_photo,
+                      text: 'Photos',
+                      index: 1,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushNamed(
+                          context,
+                          '/groups/photos',
+                          arguments: {'groupId': widget.group['id']},
+                        );
+                      },
+                    ),
 
-                    //
-                    // //to do
-                    // _animatedMenuItem(
-                    //   icon: Icons.add_a_photo,
-                    //   text: 'Videos',
-                    //   index: 1,
-                    //   onTap: () {
-                    //     Navigator.of(context).pop();
-                    //     Navigator.pushNamed(
-                    //       context,
-                    //       '/groups/videos',
-                    //         arguments: {'groupId': widget.group['id']},
-                    //     );
-                    //   },
-                    // ),
-                    //
-                    // //to do
-                    // _animatedMenuItem(
-                    //   icon: Icons.add_a_photo,
-                    //   text: 'Albums',
-                    //   index: 1,
-                    //   onTap: () {
-                    //     Navigator.of(context).pop();
-                    //     Navigator.pushNamed(
-                    //       context,
-                    //       '/albums',
-                    //       arguments: {'slug': widget.group['slug']},
-                    //     );
-                    //   },
-                    // ),
-
+                    _animatedMenuItem(
+                      icon: Icons.video_call,
+                      text: 'Videos',
+                      index: 1,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushNamed(
+                          context,
+                          '/groups/videos',
+                            arguments: {'groupId': widget.group['id']},
+                        );
+                      },
+                    ),
                     _animatedMenuItem(
                       icon: Icons.folder,
                       text: 'Documents',
@@ -202,40 +180,6 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                       },
                     ),
 
-                    //to do
-                    _animatedMenuItem(
-                      icon: Icons.add_a_photo,
-                      text: 'Messages',
-                      index: 1,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(
-                          context,
-                          '/albums',
-                          arguments: {'slug': widget.group['slug']},
-                        );
-                      },
-                    ),
-
-                    const Divider(),
-                    _animatedMenuItem(
-                      icon: Icons.person,
-                      text: 'Profile',
-                      index: 4,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(context, '/profile');
-                      },
-                    ),
-                    _animatedMenuItem(
-                      icon: Icons.group,
-                      text: 'Groups',
-                      index: 5,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(context, '/groups');
-                      },
-                    ),
                   ],
                 ),
               ),

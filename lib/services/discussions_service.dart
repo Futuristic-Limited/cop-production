@@ -48,9 +48,64 @@ class DiscussionService {
     }
   }
 
+  static Future<String?> getUserId() async {
+    return await SharedPrefsService.getUserId();
+  }
+
+  static Future<bool> discussionEdit(String id, String description) async {
+
+      final url = Uri.parse('$apiBaseUrl/discussions-save-edit');
+      final token = await SharedPrefsService.getAccessToken();
+      final userId = await SharedPrefsService.getUserId();
+      final body = jsonEncode({
+        'id': id,
+        'post_description': description,
+        'post_author': userId,
+      });
+
+      // print("++++++++++");
+      // print(body);
+      // print("++++++++++");
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        //print(json);
+        if (json['success'] == true) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    // try {
+    //   final response = await http.post(
+    //     Uri.parse('YOUR_API_ENDPOINT_HERE'),
+    //     body: {
+    //       'id': id,
+    //       'description': description,
+    //     },
+    //   );
+    //   return response.statusCode == 200;
+    // } catch (e) {
+    //   return false;
+    // }
+
+
   Future<DiscussionsResponse?> discussionReplies(String discussionID) async {
     final url = Uri.parse('$apiBaseUrl/discussion-replys/$discussionID');
     final token = await _getToken();
+
 
     final response = await http.get(
       url,
@@ -95,7 +150,9 @@ class DiscussionService {
   }) async {
     final url = Uri.parse('$apiBaseUrl/discussions-save');
     final token = await _getToken();
-    final userId = SharedPrefsService.getUserId();
+    //final userId = SharedPrefsService.getUserId();
+
+    final userId = await SharedPrefsService.getUserId();
 
     final body = jsonEncode({
       'post_title': title,
@@ -107,9 +164,9 @@ class DiscussionService {
       'groupd': groupd,
     });
 
-    print("++++++++++");
-    print(body);
-    print("++++++++++");
+    // print("++++++++++");
+    // print(body);
+    // print("++++++++++");
 
     final response = await http.post(
       url,
