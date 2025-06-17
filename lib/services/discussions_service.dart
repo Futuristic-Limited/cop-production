@@ -95,7 +95,9 @@ class DiscussionService {
   }) async {
     final url = Uri.parse('$apiBaseUrl/discussions-save');
     final token = await _getToken();
-    final userId = SharedPrefsService.getUserId();
+    //final userId = SharedPrefsService.getUserId();
+
+    final userId = await SharedPrefsService.getUserId();
 
     final body = jsonEncode({
       'post_title': title,
