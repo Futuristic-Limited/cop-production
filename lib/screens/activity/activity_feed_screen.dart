@@ -17,14 +17,12 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   final TextEditingController _postController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _replyController = TextEditingController();
-  String? _currentUserId; // Store current user ID here
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    // You should set _currentUserId from your auth state after login
-    // For now, we'll get it from the first activity's user data (temporary)
     _allActivities.then((activities) {
       if (activities.isNotEmpty) {
         setState(() {
@@ -72,6 +70,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         .trim();
   }
 
+  // POST OPERATIONS (existing)
   void _showEditPostDialog(BuildContext context, ActivityItem post) {
     _postController.text = _stripHtmlTags(post.content);
     showModalBottomSheet(
@@ -134,8 +133,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
+  // COMMENT OPERATIONS (updated)
   void _showEditCommentDialog(BuildContext context, ActivityComment comment) {
-    _commentController.text = _stripHtmlTags(comment.content);
+    final controller = TextEditingController(text: _stripHtmlTags(comment.content));
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -149,7 +150,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _commentController,
+                controller: controller,
                 decoration: InputDecoration(
                   hintText: 'Edit your comment',
                   border: OutlineInputBorder(
@@ -165,10 +166,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   const Spacer(),
                   ElevatedButton(
                     onPressed: () async {
-                      if (_commentController.text.trim().isNotEmpty) {
+                      if (controller.text.trim().isNotEmpty) {
                         try {
-                          await _apiService.updateComment(comment.id, _commentController.text);
-                          _commentController.clear();
+                          await _apiService.updateComment(comment.id, controller.text);
+                          controller.clear();
                           Navigator.pop(context);
                           _loadData();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +227,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     }
   }
 
-  void _handleCommentAction(BuildContext context, ActivityItem post, ActivityComment comment, {bool isReply = false}) {
+  void _handleCommentAction(BuildContext context, ActivityItem post, ActivityComment comment) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Column(
@@ -238,9 +239,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               title: const Text('Edit'),
               onTap: () {
                 Navigator.pop(context);
-                isReply
-                    ? _showEditReplyDialog(context, comment)
-                    : _showEditCommentDialog(context, comment);
+                _showEditCommentDialog(context, comment);
               },
             ),
           if (comment.userId == _currentUserId)
@@ -249,9 +248,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               title: const Text('Delete', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
-                isReply
-                    ? _confirmDeleteReply(context, comment)
-                    : _confirmDeleteComment(context, comment);
+                _confirmDeleteComment(context, comment);
               },
             ),
         ],
@@ -259,8 +256,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
+  // REPLY OPERATIONS (similar to comments)
   void _showEditReplyDialog(BuildContext context, ActivityComment reply) {
-    _replyController.text = _stripHtmlTags(reply.content);
+    final controller = TextEditingController(text: _stripHtmlTags(reply.content));
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -274,7 +273,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _replyController,
+                controller: controller,
                 decoration: InputDecoration(
                   hintText: 'Edit your reply',
                   border: OutlineInputBorder(
@@ -290,10 +289,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   const Spacer(),
                   ElevatedButton(
                     onPressed: () async {
-                      if (_replyController.text.trim().isNotEmpty) {
+                      if (controller.text.trim().isNotEmpty) {
                         try {
-                          await _apiService.updateReply(reply.id, _replyController.text);
-                          _replyController.clear();
+                          await _apiService.updateReply(reply.id, controller.text);
+                          controller.clear();
                           Navigator.pop(context);
                           _loadData();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -351,6 +350,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     }
   }
 
+  // COMMENT DISPLAY WIDGETS
   Widget _buildFullComment(BuildContext context, ActivityComment comment, ActivityItem post, {bool isReply = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +359,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              radius: 20,
+              radius: isReply ? 16 : 20,
               child: ClipOval(
                 child: (comment.userAvatar != null && comment.userAvatar!.isNotEmpty)
                     ? CachedNetworkImage(
@@ -367,8 +367,8 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
                   errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
                   fit: BoxFit.cover,
-                  width: 40,
-                  height: 40,
+                  width: isReply ? 32 : 40,
+                  height: isReply ? 32 : 40,
                 )
                     : Image.asset('assets/default_avatar.png'),
               ),
@@ -412,7 +412,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.more_vert, size: 16),
-              onPressed: () => _handleCommentAction(context, post, comment, isReply: isReply),
+              onPressed: () => isReply
+                  ? _handleReplyAction(context, post, comment)
+                  : _handleCommentAction(context, post, comment),
             ),
           ],
         ),
@@ -430,6 +432,36 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
+  void _handleReplyAction(BuildContext context, ActivityItem post, ActivityComment reply) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (reply.userId == _currentUserId)
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                _showEditReplyDialog(context, reply);
+              },
+            ),
+          if (reply.userId == _currentUserId)
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDeleteReply(context, reply);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // REST OF THE CODE (existing implementation)
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -575,35 +607,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  void _showPostActions(BuildContext context, ActivityItem post) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (post.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditPostDialog(context, post);
-              },
-            ),
-          if (post.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeletePost(context, post);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCommentPreview(BuildContext context, ActivityComment comment, ActivityItem post) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -638,7 +641,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.more_vert, size: 16),
-                onPressed: () => _handleCommentAction(context, post, comment, isReply: false),
+                onPressed: () => _handleCommentAction(context, post, comment),
               ),
             ],
           ),
@@ -744,7 +747,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.more_vert, size: 14),
-              onPressed: () => _handleCommentAction(context, post, reply, isReply: true),
+              onPressed: () => _handleReplyAction(context, post, reply),
             ),
           ],
         ),
@@ -758,6 +761,35 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  void _showPostActions(BuildContext context, ActivityItem post) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (post.userId == _currentUserId)
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                _showEditPostDialog(context, post);
+              },
+            ),
+          if (post.userId == _currentUserId)
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDeletePost(context, post);
+              },
+            ),
+        ],
+      ),
     );
   }
 
@@ -1112,3 +1144,5 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 }
+
+

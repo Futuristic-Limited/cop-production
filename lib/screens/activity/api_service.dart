@@ -129,16 +129,20 @@ class ApiService {
       final response = await http.post(
         Uri.parse('${apiUrl}/feed/comment/$postId'),
         headers: await _getHeaders(),
-        body: jsonEncode({'content': content}),
+        body: jsonEncode({
+          'content': content,  // Only send content since postId is in URL
+        }),
       );
 
       if (response.statusCode == 201) {
-        return ActivityComment.fromJson(jsonDecode(response.body));
+        final responseData = jsonDecode(response.body);
+        // Ensure the response contains the full comment data
+        return ActivityComment.fromJson(responseData['comment'] ?? responseData);
       } else {
         throw Exception('Failed to add comment: ${response.statusCode}');
       }
     } catch (e, stackTrace) {
-      _handleError('addComment', e, stackTrace);
+      _handleError('addComment error', e, stackTrace);
       rethrow;
     }
   }
