@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:APHRC_COP/screens/communities/communities_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
-import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
