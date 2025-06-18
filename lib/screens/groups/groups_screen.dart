@@ -216,7 +216,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           Navigator.pushNamed(
                             context,
                             '/groups/discussions',
-                            arguments: {'slug': group.toJson()["slug"]},
+                            arguments: {
+                              'slug': group.toJson()["slug"],
+                              'groupId': group.toJson()["id"].toString(),
+                              'group': group.toJson()
+                            },
                           );
                         },
                         child: Text(

@@ -5,7 +5,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../services/shared_prefs_service.dart';
 import 'package:intl/intl.dart';
 
-
 bool isSelectionMode = false;
 Set<int> selectedNotifications = {};
 
@@ -67,7 +66,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
 
     try {
       final token = await SharedPrefsService.getAccessToken();
-      final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
+      final apiUrl = dotenv.env['BPI_URL'] ?? dotenv.env['API_URL'];
       final url = Uri.parse('$apiUrl/notifications');
 
       final response = await http.get(url, headers: {

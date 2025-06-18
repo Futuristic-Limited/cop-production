@@ -7,7 +7,7 @@ import 'comment_reply.dart';
 class DiscussionDetailScreen extends StatefulWidget {
   final Discussions discussion;
 
-  const DiscussionDetailScreen({super.key, required this.discussion});
+  const DiscussionDetailScreen({super.key, required this.discussion, required Map<String, Object?> group});
 
   @override
   State<DiscussionDetailScreen> createState() => _DiscussionDetailScreenState();
