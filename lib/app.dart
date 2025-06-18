@@ -1,3 +1,4 @@
+import 'package:APHRC_COP/screens/activity/create_activity_feed_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_documents_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'package:APHRC_COP/screens/groups/group_photos_screen.dart';
@@ -105,6 +106,12 @@ class _MyAppState extends State<MyApp> {
           '/home/account': (context) => const HomeScreenLoggedIn(stype: "account"),
           '/home/tools': (context) => const HomeScreenLoggedIn(stype: "tools"),
           '/activity/feeds': (context) => const ActivityFeedScreen(),
+          '/activity/feed/post/create': (context) {
+            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+            return CreateActivityFeedPostScreen(
+              groupId: args?['groupId'],
+            );
+          },
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/group-detail') {
@@ -122,49 +129,49 @@ class _MyAppState extends State<MyApp> {
             );
           }
 
-        if (settings.name == '/groups/photos') {
-          final args = settings.arguments as Map<String, dynamic>;
-          final groupId = args['groupId'];
-          return MaterialPageRoute(
-            builder: (_) => GroupPhotos(groupId: groupId),
-          );
-        }
+          if (settings.name == '/groups/photos') {
+            final args = settings.arguments as Map<String, dynamic>;
+            final groupId = args['groupId'];
+            return MaterialPageRoute(
+              builder: (_) => GroupPhotos(groupId: groupId),
+            );
+          }
 
-        if (settings.name == '/groups/videos') {
-          final args = settings.arguments as Map<String, dynamic>;
-          final groupId = args['groupId'];
-          return MaterialPageRoute(
-            builder: (_) => GroupVideos(groupId: groupId),
-          );
-        }
+          if (settings.name == '/groups/videos') {
+            final args = settings.arguments as Map<String, dynamic>;
+            final groupId = args['groupId'];
+            return MaterialPageRoute(
+              builder: (_) => GroupVideos(groupId: groupId),
+            );
+          }
 
-        if (settings.name == '/groups/documents') {
-          final args = settings.arguments as Map<String, dynamic>;
-          final groupId = args['groupId'];
-          return MaterialPageRoute(
-            builder: (_) => GroupDocuments(groupId: groupId),
-          );
-        }
+          if (settings.name == '/groups/documents') {
+            final args = settings.arguments as Map<String, dynamic>;
+            final groupId = args['groupId'];
+            return MaterialPageRoute(
+              builder: (_) => GroupDocuments(groupId: groupId),
+            );
+          }
 
-        if (settings.name == '/groups/discussions') {
-          final args = settings.arguments as Map<String, dynamic>;
-          print('the settings, ${settings.arguments}');
-          final group = args['slug'];
-          final groupId = args['groupId'];
-          final groupDetails = args['group'];
-          return MaterialPageRoute(
-            builder: (_) => DiscussionsScreen(groupd: group, groupId: groupId, groupDetails: groupDetails),
-          );
-        }
+          if (settings.name == '/groups/discussions') {
+            final args = settings.arguments as Map<String, dynamic>;
+            print('the settings, ${settings.arguments}');
+            final group = args['slug'];
+            final groupId = args['groupId'];
+            final groupDetails = args['group'];
+            return MaterialPageRoute(
+              builder: (_) => DiscussionsScreen(groupd: group, groupId: groupId, groupDetails: groupDetails),
+            );
+          }
 
-        // Uncomment if needed
-        // if (settings.name == '/home/community') {
-        //   final args = settings.arguments as Map<String, dynamic>;
-        //   final stype = args['type'];
-        //   return MaterialPageRoute(
-        //     builder: (_) => MyDashboardScreen(stype: stype),
-        //   );
-        // }
+          // Uncomment if needed
+          // if (settings.name == '/home/community') {
+          //   final args = settings.arguments as Map<String, dynamic>;
+          //   final stype = args['type'];
+          //   return MaterialPageRoute(
+          //     builder: (_) => MyDashboardScreen(stype: stype),
+          //   );
+          // }
 
           return null; // fallback
         },

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../cells/community_card.dart';
+import '../../cells/custom_bottom_nav_bar.dart';
 import '../../screens/groups/group_detail_screen.dart';
 import '../../services/community_service.dart';
 import '../../services/token_preference.dart';
-import '../../cells/community_card.dart'; // Assuming we'll keep the card widget for reuse
+import '../../cells/community_card.dart';
+import '../../cells/custom_bottom_nav_bar.dart'; // Import the CustomBottomNavBar
 
 class CommunitiesScreen extends StatefulWidget {
   const CommunitiesScreen({super.key});
@@ -19,6 +21,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
   bool _hasError = false;
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _filteredCommunities = [];
+  int _currentIndex = 3; // Communities is the 4th item (index 3)
 
   @override
   void initState() {
@@ -64,6 +67,13 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
     await _fetchCommunities();
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    // The navigation is already handled in the CustomBottomNavBar
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,6 +116,10 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
             child: _buildCommunityList(),
           ),
         ],
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: _currentIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -155,5 +169,4 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
     );
   }
 }
-
 

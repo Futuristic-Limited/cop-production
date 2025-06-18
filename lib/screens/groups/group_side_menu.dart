@@ -28,7 +28,7 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
       vsync: this,
     );
 
-    const itemCount = 6;
+    const itemCount = 7; // Updated from 6 to 7 to accommodate new item
     _drawerAnimations = List.generate(
       itemCount,
           (index) => Tween<Offset>(
@@ -113,23 +113,37 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         Navigator.pushNamed(context, '/home');
                       },
                     ),
+                    // New Create Post Menu Item
                     _animatedMenuItem(
-                      icon: Icons.forum,
-                      text: 'Discussions',
-                      index: 1,
+                      icon: Icons.post_add,
+                      text: 'Activity Feeds',
+                      index: 1, // New index
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
                           context,
-                          '/groups/discussions',
-                          arguments: {'slug': widget.group['slug']},
+                          '/activity/feed/post/create',
+                          arguments: {'groupId': widget.group['id'].toString()},
                         );
                       },
                     ),
+                    // _animatedMenuItem(
+                    //   icon: Icons.forum,
+                    //   text: 'Discussions',
+                    //   index: 2,
+                    //   onTap: () {
+                    //     Navigator.of(context).pop();
+                    //     Navigator.pushNamed(
+                    //       context,
+                    //       '/groups/discussions',
+                    //       arguments: {'groupd': widget.group['slug'], 'groupId': widget.group['id'].toString(), 'groupDetails': widget.group },
+                    //     );
+                    //   },
+                    // ),
                     _animatedMenuItem(
                       icon: Icons.people,
                       text: 'Members',
-                      index: 2,
+                      index: 3,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
@@ -142,7 +156,7 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                     _animatedMenuItem(
                       icon: Icons.add_a_photo,
                       text: 'Photos',
-                      index: 1,
+                      index: 4,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
@@ -152,24 +166,23 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         );
                       },
                     ),
-
                     _animatedMenuItem(
                       icon: Icons.video_call,
                       text: 'Videos',
-                      index: 1,
+                      index: 5,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
                           context,
                           '/groups/videos',
-                            arguments: {'groupId': widget.group['id']},
+                          arguments: {'groupId': widget.group['id']},
                         );
                       },
                     ),
                     _animatedMenuItem(
                       icon: Icons.folder,
                       text: 'Documents',
-                      index: 1,
+                      index: 6,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.pushNamed(
@@ -179,7 +192,6 @@ class _GroupSideMenuState extends State<GroupSideMenu> with TickerProviderStateM
                         );
                       },
                     ),
-
                   ],
                 ),
               ),
@@ -263,3 +275,5 @@ class _HoverCardState extends State<HoverCard> {
     );
   }
 }
+
+
