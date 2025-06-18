@@ -274,174 +274,176 @@ class _GroupPhotosState extends State<GroupPhotos> {
           valueListenable: _uploadNotifier,
           builder: (context, _, __) {
             return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-
-                    if (_selectedImage != null) ...[
-                      const SizedBox(height: 16),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SizedBox(
-                            height: constraints.maxWidth * 0.4,
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      _selectedImage!,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-
-                                if (!_isLoadingUpload)
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedImage = null;
-                                          _uploaded = null;
-                                        });
-                                        Navigator.pop(context);
-                                      },
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        padding: const EdgeInsets.all(4),
-                                        child: const Icon(Icons.close,
-                                            color: Colors.white,
-                                            size: 20),
-                                      ),
-                                    ),
-                                  ),
-
-                                if (_isLoadingUpload)
-                                  Container(
-                                    color: Colors.black54,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    Text(uploadPhotoText),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _descriptionController,
-                      cursorColor: AppColors.aphrcGreen,
-                      style: const TextStyle(color: AppColors.aphrcGreen),
-                      decoration: InputDecoration(
-                        labelText: 'Write something about your photo',
-                        labelStyle: const TextStyle(color: AppColors.aphrcGreen),
-                        border: const OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.aphrcGreen, width: 2),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      maxLines: 1,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_selectedImage == null) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SizedBox(
+                              height: constraints.maxWidth * 0.4,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        _selectedImage!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                
+                                  if (!_isLoadingUpload)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedImage = null;
+                                            _uploaded = null;
+                                          });
+                                          Navigator.pop(context);
+                                        },
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          child: const Icon(Icons.close,
+                                              color: Colors.white,
+                                              size: 20),
+                                        ),
+                                      ),
+                                    ),
+                
+                                  if (_isLoadingUpload)
+                                    Container(
+                                      color: Colors.black54,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('Gallery'),
-                              onPressed: () => _pickImage(ImageSource.gallery),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('Camera'),
-                              onPressed: () => _pickImage(ImageSource.camera),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    if (_selectedImage != null) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: _saveNotifier,
-                          builder: (context, isSaving, _) {
-                            return ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
-                              child: isSaving
-                                  ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : const Text('Upload Photo'),
                             );
                           },
                         ),
-                      )
+                        const SizedBox(height: 16),
+                      ],
+                      Text(uploadPhotoText),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _descriptionController,
+                        cursorColor: AppColors.aphrcGreen,
+                        style: const TextStyle(color: AppColors.aphrcGreen),
+                        decoration: InputDecoration(
+                          labelText: 'Write something about your photo',
+                          labelStyle: const TextStyle(color: AppColors.aphrcGreen),
+                          border: const OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.aphrcGreen, width: 2),
+                          ),
+                        ),
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 16),
+                      if (_selectedImage == null) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.photo_library),
+                                label: const Text('Gallery'),
+                                onPressed: () => _pickImage(ImageSource.gallery),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.camera_alt),
+                                label: const Text('Camera'),
+                                onPressed: () => _pickImage(ImageSource.camera),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _saveNotifier,
+                            builder: (context, isSaving, _) {
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
+                                child: isSaving
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Text('Upload Photo'),
+                              );
+                            },
+                          ),
+                        )
+                      ],
+                      const SizedBox(height: 16),
                     ],
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             );

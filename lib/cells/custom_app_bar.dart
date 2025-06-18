@@ -110,7 +110,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Welcome',
+                                      'Welcome Back Again',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey,
@@ -154,6 +154,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                           title: const Text('Email Invites', style: TextStyle(fontSize: 14)),
                           onTap: () {
                             Navigator.pop(context);
+                            Navigator.pushNamed(context, '/email_invites');
                             // Add email invites navigation
                           },
                         ),
