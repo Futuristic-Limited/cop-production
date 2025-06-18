@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:APHRC_COP/screens/communities/communities_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
-import 'package:APHRC_COP/screens/groups/group_members_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -151,27 +150,20 @@ class _MyAppState extends State<MyApp> {
           print('the settings, ${settings.arguments}');
           final group = args['slug'];
           final groupId = args['groupId'];
+          final groupDetails = args['group'];
           return MaterialPageRoute(
-            builder: (_) => DiscussionsScreen(groupd: group, groupId: groupId),
+            builder: (_) => DiscussionsScreen(groupd: group, groupId: groupId, groupDetails: groupDetails),
           );
         }
-          // if (settings.name == '/groups/discussions') {
-          //   print('The settings is here $settings');
-          //   final args = settings.arguments as Map<String, dynamic>;
-          //   final group = args['slug'];
-          //   return MaterialPageRoute(
-          //     builder: (_) => DiscussionsScreen(groupd: group),
-          //   );
-          // }
 
-          // Uncomment if needed
-          // if (settings.name == '/home/community') {
-          //   final args = settings.arguments as Map<String, dynamic>;
-          //   final stype = args['type'];
-          //   return MaterialPageRoute(
-          //     builder: (_) => MyDashboardScreen(stype: stype),
-          //   );
-          // }
+        // Uncomment if needed
+        // if (settings.name == '/home/community') {
+        //   final args = settings.arguments as Map<String, dynamic>;
+        //   final stype = args['type'];
+        //   return MaterialPageRoute(
+        //     builder: (_) => MyDashboardScreen(stype: stype),
+        //   );
+        // }
 
           return null; // fallback
         },

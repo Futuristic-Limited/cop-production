@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../../config/intl.dart';
 import '../../models/user_model.dart';
 import '../../models/groups_model.dart';
 import '../../models/group_invite_model.dart';
@@ -217,7 +216,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           Navigator.pushNamed(
                             context,
                             '/groups/discussions',
-                            arguments: {'slug': group.toJson()["slug"]},
+                            arguments: {
+                              'slug': group.toJson()["slug"],
+                              'groupId': group.toJson()["id"].toString(),
+                              'group': group.toJson()
+                            },
                           );
                         },
                         child: Text(

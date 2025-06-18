@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import 'package:APHRC_COP/files/UserUploadsScreen.dart';
@@ -106,42 +105,46 @@ class _MyDashboardScreenState extends State<MyDashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: widget.stype == 'home'
-          ? _activeScreen // For home screen, just show the content without tabs
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-                top: 24, left: 12, right: 12, bottom: 8),
-            child: TabBar(
-              controller: _tabController,
-              tabs: _tabs
-                  .map((tab) => Tab(
-                icon: Icon(tab.icon),
-                text: tab.label,
-              ))
-                  .toList(),
-              labelColor: const Color(0xFF6ABF43),
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: const Color(0xFF6ABF43),
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
+      body:
+          widget.stype == 'home'
+              ? _activeScreen // For home screen, just show the content without tabs
+              : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 24,
+                      left: 12,
+                      right: 12,
+                      bottom: 8,
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      tabs:
+                          _tabs
+                              .map(
+                                (tab) =>
+                                    Tab(icon: Icon(tab.icon), text: tab.label),
+                              )
+                              .toList(),
+                      labelColor: const Color(0xFF6ABF43),
+                      unselectedLabelColor: Colors.grey[600],
+                      indicatorColor: const Color(0xFF6ABF43),
+                      indicatorWeight: 3,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                      overlayColor: WidgetStateProperty.all(Colors.transparent),
+                    ),
+                  ),
+                  Expanded(child: _activeScreen),
+                ],
               ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.normal,
-                fontSize: 13,
-              ),
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
-            ),
-          ),
-          Expanded(
-            child: _activeScreen,
-          ),
-        ],
-      ),
     );
   }
 }

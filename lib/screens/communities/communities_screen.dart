@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../cells/community_card.dart';
-import '../../screens/groups/group_detail_screen.dart';
 import '../../services/community_service.dart';
-import '../../services/token_preference.dart';
-import '../../cells/community_card.dart'; // Assuming we'll keep the card widget for reuse
+// Assuming we'll keep the card widget for reuse
 
 class CommunitiesScreen extends StatefulWidget {
   const CommunitiesScreen({super.key});

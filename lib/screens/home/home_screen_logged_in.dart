@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import '../../cells/custom_app_bar.dart';
 import '../../drawer/AnimatedDrawerWrapper.dart';
 import '../../cells/custom_bottom_nav_bar.dart';
-import '../../cells/community_card.dart';
 import '../../services/community_service.dart';
 import '../../services/shared_prefs_service.dart';
 import '../auth/login_screen.dart';

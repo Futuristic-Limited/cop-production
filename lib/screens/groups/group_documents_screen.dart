@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:APHRC_COP/screens/messages/lottie.dart';
@@ -241,125 +242,127 @@ class _GroupPhotosState extends State<GroupDocuments> {
       ),
       builder: (context) {
         return SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-
-                if (_selectedImage != null) ...[
-                  const SizedBox(height: 16),
-                  ListTile(
-                    leading: Icon(
-                      getDocumentIcon(_selectedImage!.path.split('.').last),
-                      size: 36,
-                      color: getDocumentColor(_selectedImage!.path.split('.').last),
-                    ),
-                    title: Text(
-                      _selectedImage!.path.split('/').last,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        setState(() => _selectedImage = null);
-                        Navigator.pop(context);
-                      },
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-
-                Text(uploadDocumentText),
-                const SizedBox(height: 8),
-
-                TextField(
-                  controller: _descriptionController,
-                  cursorColor: AppColors.aphrcGreen,
-                  style: const TextStyle(color: AppColors.aphrcGreen),
-                  decoration: InputDecoration(
-                    labelText: 'Add description for this document',
-                    labelStyle: const TextStyle(color: AppColors.aphrcGreen),
-                    border: const OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                          color: AppColors.aphrcGreen,
-                          width: 2),
-                    ),
-                  ),
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 16),
-
-                if (_selectedImage == null) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.aphrcGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+            
+                  if (_selectedImage != null) ...[
+                    const SizedBox(height: 16),
+                    ListTile(
+                      leading: Icon(
+                        getDocumentIcon(_selectedImage!.path.split('.').last),
+                        size: 36,
+                        color: getDocumentColor(_selectedImage!.path.split('.').last),
                       ),
-                      icon: const Icon(Icons.insert_drive_file),
-                      label: const Text('Select Document'),
-                      onPressed: _pickDocument,
+                      title: Text(
+                        _selectedImage!.path.split('/').last,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          setState(() => _selectedImage = null);
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
+                    const SizedBox(height: 16),
+                  ],
+            
+                  Text(uploadDocumentText),
+                  const SizedBox(height: 8),
+            
+                  TextField(
+                    controller: _descriptionController,
+                    cursorColor: AppColors.aphrcGreen,
+                    style: const TextStyle(color: AppColors.aphrcGreen),
+                    decoration: InputDecoration(
+                      labelText: 'Add description for this document',
+                      labelStyle: const TextStyle(color: AppColors.aphrcGreen),
+                      border: const OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                            color: AppColors.aphrcGreen,
+                            width: 2),
+                      ),
+                    ),
+                    maxLines: 1,
                   ),
-                ],
-
-                if (_selectedImage != null) ...[
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ValueListenableBuilder<bool>(
-                      valueListenable: _saveNotifier,
-                      builder: (context, isSaving, _) {
-                        return ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.aphrcGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+            
+                  if (_selectedImage == null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.aphrcGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          onPressed: isSaving ? null : _saveActivityDocument,
-                          child: isSaving
-                              ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                              : const Text('Upload Document'),
-                        );
-                      },
+                        ),
+                        icon: const Icon(Icons.insert_drive_file),
+                        label: const Text('Select Document'),
+                        onPressed: _pickDocument,
+                      ),
                     ),
-                  )
+                  ],
+            
+                  if (_selectedImage != null) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: _saveNotifier,
+                        builder: (context, isSaving, _) {
+                          return ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.aphrcGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: isSaving ? null : _saveActivityDocument,
+                            child: isSaving
+                                ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                                : const Text('Upload Document'),
+                          );
+                        },
+                      ),
+                    )
+                  ],
+                  const SizedBox(height: 16),
                 ],
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
           ),
         );
@@ -477,17 +480,17 @@ class _GroupPhotosState extends State<GroupDocuments> {
             ),
 
 
-              trailing: PopupMenuButton<String>(
+            trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 20),
               onSelected: (value) async {
                 switch (value) {
                   case 'download':
                     try {
                       await downloadAndOpenFile(
-                      url: document.url,
-                      fileName: document.title,
-                      token: _accessToken ?? '',
-                      context: context, // Make sure you have access to BuildContext here
+                        url: document.url,
+                        fileName: document.title,
+                        token: _accessToken ?? '',
+                        context: context, // Make sure you have access to BuildContext here
                       );
                     } catch (e) {
                       if (mounted) {
