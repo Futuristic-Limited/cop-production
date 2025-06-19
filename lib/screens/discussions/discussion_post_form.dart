@@ -150,7 +150,6 @@ class _PostFormWidgetState extends State<PostFormWidget> {
     final result = await _uploadMedia(file);
     if (!mounted) return;
 
-    print('Upload result: $result');
 
     final idResult = result?['id'];
 

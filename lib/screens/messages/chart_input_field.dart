@@ -10,7 +10,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-final buddyBossApiUrl = dotenv.env['WP_API_URL'];
 final apiUrl = dotenv.env['WP_API_URL'];
 
 class ChatInputField extends StatefulWidget {
@@ -471,3 +470,4 @@ class _ChatInputFieldState extends State<ChatInputField> {
     );
   }
 }
+
