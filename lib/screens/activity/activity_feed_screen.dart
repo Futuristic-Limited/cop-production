@@ -1,7 +1,20 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:APHRC_COP/screens/activity/attacment-preview.dart';
+import 'package:APHRC_COP/screens/activity/video-thumbnail.dart';
+import 'package:APHRC_COP/services/token_preference.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mime/mime.dart';
 import '../../models/activity_item_model.dart';
+import '../../utils/constants.dart';
 import 'api_service.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
@@ -18,11 +31,18 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _replyController = TextEditingController();
   String? _currentUserId;
+  final ImagePicker _picker = ImagePicker();
+  String? _ciAccessToken;
+  final List<String> _uploaded = [];
+  final apiUrl = dotenv.env['WP_API_URL'];
+  final ValueNotifier<List<File>> pickedFilesNotifier = ValueNotifier([]);
+  final ValueNotifier<Set<int>> uploadingIndexesNotifier = ValueNotifier({});
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _getAccessToken();
     _allActivities.then((activities) {
       if (activities.isNotEmpty) {
         setState(() {
@@ -36,6 +56,172 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     setState(() {
       _allActivities = _apiService.getAllActivities();
     });
+  }
+
+  Future<void> _getAccessToken() async {
+    final ciToken = await SaveAccessTokenService.getBuddyToken();
+    if (ciToken != null) {
+      setState(() {
+        _ciAccessToken = ciToken;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final file = File(picked.path);
+
+      // Add file and track index
+      final files = [...pickedFilesNotifier.value, file];
+      final index = files.length - 1;
+
+      pickedFilesNotifier.value = files;
+      uploadingIndexesNotifier.value = {
+        ...uploadingIndexesNotifier.value,
+        index,
+      };
+
+      await _uploadAndAdd(file, index);
+
+      // Remove upload flag after upload
+      uploadingIndexesNotifier.value =
+          uploadingIndexesNotifier.value..remove(index);
+    }
+  }
+
+  Future<void> _pickAnyFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+
+    if (result != null) {
+      final newFiles = result.paths.map((path) => File(path!)).toList();
+      final oldFiles = pickedFilesNotifier.value;
+      final startIndex = oldFiles.length;
+
+      pickedFilesNotifier.value = [...oldFiles, ...newFiles];
+
+      // Mark all new indexes as uploading
+      uploadingIndexesNotifier.value = {
+        ...uploadingIndexesNotifier.value,
+        for (int i = 0; i < newFiles.length; i++) startIndex + i,
+      };
+
+      // Upload each file and update upload state
+      for (int i = 0; i < newFiles.length; i++) {
+        await _uploadAndAdd(newFiles[i], startIndex + i);
+        final updated = {...uploadingIndexesNotifier.value}
+          ..remove(startIndex + i);
+        uploadingIndexesNotifier.value = updated;
+      }
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final picked = await _picker.pickVideo(source: ImageSource.gallery);
+      if (picked != null) {
+        final file = File(picked.path);
+
+        final files = [...pickedFilesNotifier.value, file];
+        final index = files.length - 1;
+
+        pickedFilesNotifier.value = files;
+        uploadingIndexesNotifier.value = {
+          ...uploadingIndexesNotifier.value,
+          index,
+        };
+
+        await _uploadAndAdd(file, index);
+
+        uploadingIndexesNotifier.value =
+            uploadingIndexesNotifier.value..remove(index);
+      }
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  Future<void> _uploadAndAdd(File file, int index) async {
+    final result = await _uploadMedia(file, index);
+    print('Upload result id: $result');
+    final idResult = result?['id'];
+
+    if (!mounted) return;
+
+    if (idResult != null) {
+      setState(() {
+        if (idResult is List) {
+          _uploaded.addAll(idResult.map((id) => id.toString()));
+        } else {
+          _uploaded.add(idResult.toString());
+        }
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> _uploadMedia(File file, int index) async {
+    try {
+      // Mark index as uploading
+      uploadingIndexesNotifier.value = {
+        ...uploadingIndexesNotifier.value,
+        index,
+      };
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${apiUrl}wp-json/wp/v2/media'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $_ciAccessToken';
+
+      final contentType = _getContentType(file.path);
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: contentType,
+        ),
+      );
+
+      final response = await request.send();
+      if (response.statusCode == 201) {
+        final responseData = await response.stream.bytesToString();
+        final jsonData = jsonDecode(responseData);
+
+        // Remove index from uploading
+        uploadingIndexesNotifier.value = {
+          ...uploadingIndexesNotifier.value..remove(index),
+        };
+
+        return {'id': jsonData['id']};
+      }
+
+      // If not successful, also remove index
+      uploadingIndexesNotifier.value = {
+        ...uploadingIndexesNotifier.value..remove(index),
+      };
+
+      return null;
+    } catch (e) {
+      uploadingIndexesNotifier.value = {
+        ...uploadingIndexesNotifier.value..remove(index),
+      };
+      print('Error uploading file: $e');
+      return null;
+    }
+  }
+
+  MediaType _getContentType(String filePath) {
+    final mimeType = lookupMimeType(filePath);
+    if (mimeType != null) {
+      final parts = mimeType.split('/');
+      return MediaType(parts[0], parts[1]);
+    }
+    return MediaType('application', 'octet-stream');
   }
 
   @override
@@ -76,140 +262,164 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _postController,
-                decoration: InputDecoration(
-                  hintText: 'Edit your post',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                maxLines: 5,
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Row(
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_postController.text.trim().isNotEmpty) {
-                        try {
-                          await _apiService.updatePost(
-                            post.id,
-                            _postController.text,
-                            groupId: post.groupId,
-                          );
-                          _postController.clear();
-                          Navigator.pop(context);
-                          _loadData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Post updated successfully')),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to update post: $e')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Update'),
+                  TextField(
+                    controller: _postController,
+                    decoration: InputDecoration(
+                      hintText: 'Edit your post',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 5,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_postController.text.trim().isNotEmpty) {
+                            try {
+                              await _apiService.updatePost(
+                                post.id,
+                                _postController.text,
+                                groupId: post.groupId,
+                              );
+                              _postController.clear();
+                              Navigator.pop(context);
+                              _loadData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Post updated successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to update post: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Update'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   // COMMENT OPERATIONS (updated)
   void _showEditCommentDialog(BuildContext context, ActivityComment comment) {
-    final controller = TextEditingController(text: _stripHtmlTags(comment.content));
+    final controller = TextEditingController(
+      text: _stripHtmlTags(comment.content),
+    );
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Edit your comment',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                maxLines: 3,
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Row(
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (controller.text.trim().isNotEmpty) {
-                        try {
-                          await _apiService.updateComment(comment.id, controller.text);
-                          controller.clear();
-                          Navigator.pop(context);
-                          _loadData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Comment updated successfully')),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to update comment: $e')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Update'),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Edit your comment',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 3,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (controller.text.trim().isNotEmpty) {
+                            try {
+                              await _apiService.updateComment(
+                                comment.id,
+                                controller.text,
+                              );
+                              controller.clear();
+                              Navigator.pop(context);
+                              _loadData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Comment updated successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to update comment: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Update'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Future<void> _confirmDeleteComment(BuildContext context, ActivityComment comment) async {
+  Future<void> _confirmDeleteComment(
+    BuildContext context,
+    ActivityComment comment,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Comment'),
-        content: const Text('Are you sure you want to delete this comment?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Comment'),
+            content: const Text(
+              'Are you sure you want to delete this comment?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -220,119 +430,144 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           const SnackBar(content: Text('Comment deleted successfully')),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete comment: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete comment: $e')));
       }
     }
   }
 
-  void _handleCommentAction(BuildContext context, ActivityItem post, ActivityComment comment) {
+  void _handleCommentAction(
+    BuildContext context,
+    ActivityItem post,
+    ActivityComment comment,
+  ) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (comment.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditCommentDialog(context, comment);
-              },
-            ),
-          if (comment.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeleteComment(context, comment);
-              },
-            ),
-        ],
-      ),
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (comment.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditCommentDialog(context, comment);
+                  },
+                ),
+              if (comment.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    'Delete',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteComment(context, comment);
+                  },
+                ),
+            ],
+          ),
     );
   }
 
   // REPLY OPERATIONS (similar to comments)
   void _showEditReplyDialog(BuildContext context, ActivityComment reply) {
-    final controller = TextEditingController(text: _stripHtmlTags(reply.content));
+    final controller = TextEditingController(
+      text: _stripHtmlTags(reply.content),
+    );
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Edit your reply',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                maxLines: 3,
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Row(
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (controller.text.trim().isNotEmpty) {
-                        try {
-                          await _apiService.updateReply(reply.id, controller.text);
-                          controller.clear();
-                          Navigator.pop(context);
-                          _loadData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reply updated successfully')),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to update reply: $e')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Update'),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Edit your reply',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 3,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (controller.text.trim().isNotEmpty) {
+                            try {
+                              await _apiService.updateReply(
+                                reply.id,
+                                controller.text,
+                              );
+                              controller.clear();
+                              Navigator.pop(context);
+                              _loadData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Reply updated successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to update reply: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Update'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Future<void> _confirmDeleteReply(BuildContext context, ActivityComment reply) async {
+  Future<void> _confirmDeleteReply(
+    BuildContext context,
+    ActivityComment reply,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Reply'),
-        content: const Text('Are you sure you want to delete this reply?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Reply'),
+            content: const Text('Are you sure you want to delete this reply?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -343,15 +578,20 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           const SnackBar(content: Text('Reply deleted successfully')),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete reply: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete reply: $e')));
       }
     }
   }
 
   // COMMENT DISPLAY WIDGETS
-  Widget _buildFullComment(BuildContext context, ActivityComment comment, ActivityItem post, {bool isReply = false}) {
+  Widget _buildFullComment(
+    BuildContext context,
+    ActivityComment comment,
+    ActivityItem post, {
+    bool isReply = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -361,16 +601,22 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             CircleAvatar(
               radius: isReply ? 16 : 20,
               child: ClipOval(
-                child: (comment.userAvatar != null && comment.userAvatar!.isNotEmpty)
-                    ? CachedNetworkImage(
-                  imageUrl: comment.userAvatar!,
-                  placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                  errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                  fit: BoxFit.cover,
-                  width: isReply ? 32 : 40,
-                  height: isReply ? 32 : 40,
-                )
-                    : Image.asset('assets/default_avatar.png'),
+                child:
+                    (comment.userAvatar != null &&
+                            comment.userAvatar!.isNotEmpty)
+                        ? CachedNetworkImage(
+                          imageUrl: comment.userAvatar!,
+                          placeholder:
+                              (context, url) =>
+                                  Image.asset('assets/default_avatar.png'),
+                          errorWidget:
+                              (context, url, error) =>
+                                  Image.asset('assets/default_avatar.png'),
+                          fit: BoxFit.cover,
+                          width: isReply ? 32 : 40,
+                          height: isReply ? 32 : 40,
+                        )
+                        : Image.asset('assets/default_avatar.png'),
               ),
             ),
             const SizedBox(width: 12),
@@ -390,9 +636,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                     children: [
                       Text(
                         _formatTimeAgo(comment.dateRecorded),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                       ),
                       const SizedBox(width: 16),
                       if (!isReply)
@@ -400,7 +646,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                           onTap: () => _showReplyDialog(context, post, comment),
                           child: Text(
                             'Reply',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).primaryColor,
                             ),
                           ),
@@ -412,9 +660,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.more_vert, size: 16),
-              onPressed: () => isReply
-                  ? _handleReplyAction(context, post, comment)
-                  : _handleCommentAction(context, post, comment),
+              onPressed:
+                  () =>
+                      isReply
+                          ? _handleReplyAction(context, post, comment)
+                          : _handleCommentAction(context, post, comment),
             ),
           ],
         ),
@@ -422,9 +672,17 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 32),
             child: Column(
-              children: comment.replies
-                  .map((reply) => _buildFullComment(context, reply, post, isReply: true))
-                  .toList(),
+              children:
+                  comment.replies
+                      .map(
+                        (reply) => _buildFullComment(
+                          context,
+                          reply,
+                          post,
+                          isReply: true,
+                        ),
+                      )
+                      .toList(),
             ),
           ),
         const Divider(height: 32),
@@ -432,32 +690,40 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  void _handleReplyAction(BuildContext context, ActivityItem post, ActivityComment reply) {
+  void _handleReplyAction(
+    BuildContext context,
+    ActivityItem post,
+    ActivityComment reply,
+  ) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (reply.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditReplyDialog(context, reply);
-              },
-            ),
-          if (reply.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeleteReply(context, reply);
-              },
-            ),
-        ],
-      ),
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (reply.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditReplyDialog(context, reply);
+                  },
+                ),
+              if (reply.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    'Delete',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteReply(context, reply);
+                  },
+                ),
+            ],
+          ),
     );
   }
 
@@ -491,16 +757,25 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           children: [
             _buildActivityList(_allActivities, 'all'),
             _buildActivityList(_apiService.getUserGroupPosts(), 'my_posts'),
-            _buildActivityList(_apiService.getFollowedMembersPosts(), 'following'),
+            _buildActivityList(
+              _apiService.getFollowedMembersPosts(),
+              'following',
+            ),
             _buildActivityList(_apiService.getMentions(), 'mentions'),
-            _buildActivityList(_apiService.getFollowedGroupsActivities(), 'groups'),
+            _buildActivityList(
+              _apiService.getFollowedGroupsActivities(),
+              'groups',
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActivityList(Future<List<ActivityItem>> futureActivities, String feedType) {
+  Widget _buildActivityList(
+    Future<List<ActivityItem>> futureActivities,
+    String feedType,
+  ) {
     return FutureBuilder<List<ActivityItem>>(
       future: futureActivities,
       builder: (context, snapshot) {
@@ -523,7 +798,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             padding: const EdgeInsets.all(8),
             itemCount: activities.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) => _buildActivityItem(context, activities[index]),
+            itemBuilder:
+                (context, index) =>
+                    _buildActivityItem(context, activities[index]),
           ),
         );
       },
@@ -540,16 +817,22 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         children: [
           ListTile(
             leading: ClipOval(
-              child: (activity.userAvatar != null && activity.userAvatar!.isNotEmpty)
-                  ? CachedNetworkImage(
-                imageUrl: activity.userAvatar!,
-                placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                fit: BoxFit.cover,
-                width: 48,
-                height: 48,
-              )
-                  : Image.asset('assets/default_avatar.png'),
+              child:
+                  (activity.userAvatar != null &&
+                          activity.userAvatar!.isNotEmpty)
+                      ? CachedNetworkImage(
+                        imageUrl: activity.userAvatar!,
+                        placeholder:
+                            (context, url) =>
+                                Image.asset('assets/default_avatar.png'),
+                        errorWidget:
+                            (context, url, error) =>
+                                Image.asset('assets/default_avatar.png'),
+                        fit: BoxFit.cover,
+                        width: 48,
+                        height: 48,
+                      )
+                      : Image.asset('assets/default_avatar.png'),
             ),
             title: Text(activity.username),
             subtitle: Text(_formatTimeAgo(activity.dateRecorded)),
@@ -593,11 +876,18 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                 children: [
                   const Divider(height: 1),
                   const SizedBox(height: 8),
-                  ...activity.comments.take(2).map((comment) => _buildCommentPreview(context, comment, activity)),
+                  ...activity.comments
+                      .take(2)
+                      .map(
+                        (comment) =>
+                            _buildCommentPreview(context, comment, activity),
+                      ),
                   if (activity.comments.length > 2)
                     TextButton(
                       onPressed: () => _showPostDetails(context, activity),
-                      child: Text('View all ${activity.comments.length} comments'),
+                      child: Text(
+                        'View all ${activity.comments.length} comments',
+                      ),
                     ),
                 ],
               ),
@@ -607,7 +897,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  Widget _buildCommentPreview(BuildContext context, ActivityComment comment, ActivityItem post) {
+  Widget _buildCommentPreview(
+    BuildContext context,
+    ActivityComment comment,
+    ActivityItem post,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -618,25 +912,31 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               CircleAvatar(
                 radius: 16,
                 child: ClipOval(
-                  child: (comment.userAvatar != null && comment.userAvatar!.isNotEmpty)
-                      ? CachedNetworkImage(
-                    imageUrl: comment.userAvatar!,
-                    placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                    errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                    fit: BoxFit.cover,
-                    width: 32,
-                    height: 32,
-                  )
-                      : Image.asset('assets/default_avatar.png'),
+                  child:
+                      (comment.userAvatar != null &&
+                              comment.userAvatar!.isNotEmpty)
+                          ? CachedNetworkImage(
+                            imageUrl: comment.userAvatar!,
+                            placeholder:
+                                (context, url) =>
+                                    Image.asset('assets/default_avatar.png'),
+                            errorWidget:
+                                (context, url, error) =>
+                                    Image.asset('assets/default_avatar.png'),
+                            fit: BoxFit.cover,
+                            width: 32,
+                            height: 32,
+                          )
+                          : Image.asset('assets/default_avatar.png'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   comment.username,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               IconButton(
@@ -658,9 +958,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   children: [
                     Text(
                       _formatTimeAgo(comment.dateRecorded),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                     ),
                     const SizedBox(width: 16),
                     InkWell(
@@ -675,7 +975,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   ],
                 ),
                 if (comment.replies.isNotEmpty)
-                  ...comment.replies.map((reply) => _buildNestedReplies(context, reply, post)),
+                  ...comment.replies.map(
+                    (reply) => _buildNestedReplies(context, reply, post),
+                  ),
               ],
             ),
           ),
@@ -684,7 +986,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  Widget _buildNestedReplies(BuildContext context, ActivityComment reply, ActivityItem post) {
+  Widget _buildNestedReplies(
+    BuildContext context,
+    ActivityComment reply,
+    ActivityItem post,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -695,16 +1001,21 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             CircleAvatar(
               radius: 14,
               child: ClipOval(
-                child: (reply.userAvatar != null && reply.userAvatar!.isNotEmpty)
-                    ? CachedNetworkImage(
-                  imageUrl: reply.userAvatar!,
-                  placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                  errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                  fit: BoxFit.cover,
-                  width: 28,
-                  height: 28,
-                )
-                    : Image.asset('assets/default_avatar.png'),
+                child:
+                    (reply.userAvatar != null && reply.userAvatar!.isNotEmpty)
+                        ? CachedNetworkImage(
+                          imageUrl: reply.userAvatar!,
+                          placeholder:
+                              (context, url) =>
+                                  Image.asset('assets/default_avatar.png'),
+                          errorWidget:
+                              (context, url, error) =>
+                                  Image.asset('assets/default_avatar.png'),
+                          fit: BoxFit.cover,
+                          width: 28,
+                          height: 28,
+                        )
+                        : Image.asset('assets/default_avatar.png'),
               ),
             ),
             const SizedBox(width: 8),
@@ -726,18 +1037,17 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                     children: [
                       Text(
                         _formatTimeAgo(reply.dateRecorded),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                       ),
                       const SizedBox(width: 16),
                       InkWell(
                         onTap: () => _showReplyDialog(context, post, reply),
                         child: Text(
                           'Reply',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).primaryColor,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Theme.of(context).primaryColor),
                         ),
                       ),
                     ],
@@ -755,9 +1065,13 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 32),
             child: Column(
-              children: reply.replies
-                  .map((nestedReply) => _buildNestedReplies(context, nestedReply, post))
-                  .toList(),
+              children:
+                  reply.replies
+                      .map(
+                        (nestedReply) =>
+                            _buildNestedReplies(context, nestedReply, post),
+                      )
+                      .toList(),
             ),
           ),
       ],
@@ -767,49 +1081,60 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   void _showPostActions(BuildContext context, ActivityItem post) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (post.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditPostDialog(context, post);
-              },
-            ),
-          if (post.userId == _currentUserId)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeletePost(context, post);
-              },
-            ),
-        ],
-      ),
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (post.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditPostDialog(context, post);
+                  },
+                ),
+              if (post.userId == _currentUserId)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    'Delete',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeletePost(context, post);
+                  },
+                ),
+            ],
+          ),
     );
   }
 
-  Future<void> _confirmDeletePost(BuildContext context, ActivityItem post) async {
+  Future<void> _confirmDeletePost(
+    BuildContext context,
+    ActivityItem post,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Post'),
-        content: const Text('Are you sure you want to delete this post?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Post'),
+            content: const Text('Are you sure you want to delete this post?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -820,9 +1145,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           const SnackBar(content: Text('Post deleted successfully')),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete post: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete post: $e')));
       }
     }
   }
@@ -831,125 +1156,276 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Replying to ${post.username}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _commentController,
-                decoration: InputDecoration(
-                  hintText: 'Write a comment...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                maxLines: 3,
-                autofocus: true,
               ),
-              const SizedBox(height: 16),
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.image),
-                    onPressed: () {},
-                    tooltip: 'Add image',
+                  // Top bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_commentController.text.trim().isNotEmpty) {
-                        try {
-                          await _apiService.addComment(post.id, _commentController.text);
-                          _commentController.clear();
-                          Navigator.pop(context);
-                          _loadData();
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to add comment: $e')),
+                  Text(
+                    'Replying to ${post.username}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // File preview using ValueListenableBuilder
+                  ValueListenableBuilder<List<File>>(
+                    valueListenable: pickedFilesNotifier,
+                    builder: (context, files, _) {
+                      if (files.isEmpty) return const SizedBox.shrink();
+
+                      return ValueListenableBuilder<Set<int>>(
+                        valueListenable: uploadingIndexesNotifier,
+                        builder: (context, uploading, _) {
+                          return SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: files.length,
+                              itemBuilder: (context, index) {
+                                return AttachmentPreview(
+                                  file: files[index],
+                                  index: index,
+                                  isUploading: uploading.contains(index),
+                                  onRemove: (i) {
+                                    final updatedFiles = [...files]
+                                      ..removeAt(i);
+                                    pickedFilesNotifier.value = updatedFiles;
+
+                                    // Remove & shift uploading index values if needed
+                                    final updatedUploading =
+                                        uploading
+                                            .where((x) => x != i)
+                                            .map((x) => x > i ? x - 1 : x)
+                                            .toSet();
+                                    uploadingIndexesNotifier.value =
+                                        updatedUploading;
+                                  },
+                                  buildVideoThumbnail: buildVideoThumbnail,
+                                );
+                              },
+                            ),
                           );
-                        }
-                      }
+                        },
+                      );
                     },
-                    child: const Text('Post Comment'),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Comment input
+                  TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      hintText: 'Write a comment...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                    maxLines: 3,
+                    autofocus: true,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      // Attachment buttons
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.image, color: Colors.blue),
+                              onPressed: _pickImage,
+                              tooltip: 'Add image',
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.videocam,
+                                color: Colors.red,
+                              ),
+                              onPressed: _pickVideo,
+                              tooltip: 'Add video',
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.insert_drive_file,
+                                color: Colors.orange,
+                              ),
+                              onPressed: _pickAnyFile,
+                              tooltip: 'Add file',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+
+                      // Send button
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.aphrcGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.send, color: Colors.white),
+                          onPressed: () async {
+                            if (_commentController.text.trim().isNotEmpty) {
+                              try {
+                                final response = await _apiService
+                                    .postDiscussion(
+                                      postId: post.id,
+                                      content: _commentController.text,
+                                      mediaFiles: pickedFilesNotifier.value,
+                                      uploadedIds: _uploaded,
+                                      accessToken: _ciAccessToken ?? '',
+                                      apiUrl: apiUrl ?? '',
+                                    );
+                                print(
+                                  'Response from the API: ${response.body}',
+                                );
+                                if (response.statusCode == 200) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Comment posted successfully',
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Failed to post comment: ${response.body}',
+                                      ),
+                                    ),
+                                  );
+                                }
+                                _commentController.clear();
+                                Navigator.pop(context);
+                                _loadData(); // Refresh comments
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to add comment: $e'),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          tooltip: 'Send comment',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  void _showReplyDialog(BuildContext context, ActivityItem post, ActivityComment comment) {
+  void _showReplyDialog(
+    BuildContext context,
+    ActivityItem post,
+    ActivityComment comment,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Replying to ${comment.username}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _replyController,
-                decoration: InputDecoration(
-                  hintText: 'Write a reply...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                maxLines: 3,
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Row(
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_replyController.text.trim().isNotEmpty) {
-                        try {
-                          await _apiService.replyToComment(comment.id, _replyController.text);
-                          _replyController.clear();
-                          Navigator.pop(context);
-                          _loadData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reply posted successfully')),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to post reply: $e')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Post Reply'),
+                  Text(
+                    'Replying to ${comment.username}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _replyController,
+                    decoration: InputDecoration(
+                      hintText: 'Write a reply...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 3,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_replyController.text.trim().isNotEmpty) {
+                            try {
+                              await _apiService.replyToComment(
+                                comment.id,
+                                _replyController.text,
+                              );
+                              _replyController.clear();
+                              Navigator.pop(context);
+                              _loadData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Reply posted successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to post reply: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Post Reply'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -957,105 +1433,164 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.9,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        ClipOval(
-                          child: (post.userAvatar != null && post.userAvatar!.isNotEmpty)
-                              ? CachedNetworkImage(
-                            imageUrl: post.userAvatar!,
-                            placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                            errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                            fit: BoxFit.cover,
-                            width: 48,
-                            height: 48,
-                          )
-                              : Image.asset('assets/default_avatar.png'),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(post.username),
-                              Text(_formatTimeAgo(post.dateRecorded)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_stripHtmlTags(post.content)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.comment),
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showCommentDialog(context, post);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _commentController,
-                      decoration: InputDecoration(
-                        hintText: 'Write a comment...',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.send),
-                          onPressed: () async {
-                            if (_commentController.text.trim().isNotEmpty) {
-                              try {
-                                await _apiService.addComment(post.id, _commentController.text);
-                                _commentController.clear();
-                                _loadData();
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to add comment: $e')),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+      builder:
+          (context) => DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.9,
+            maxChildSize: 0.9,
+            builder:
+                (context, scrollController) => SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                ClipOval(
+                                  child:
+                                      (post.userAvatar != null &&
+                                              post.userAvatar!.isNotEmpty)
+                                          ? CachedNetworkImage(
+                                            imageUrl: post.userAvatar!,
+                                            placeholder:
+                                                (context, url) => Image.asset(
+                                                  'assets/default_avatar.png',
+                                                ),
+                                            errorWidget:
+                                                (
+                                                  context,
+                                                  url,
+                                                  error,
+                                                ) => Image.asset(
+                                                  'assets/default_avatar.png',
+                                                ),
+                                            fit: BoxFit.cover,
+                                            width: 48,
+                                            height: 48,
+                                          )
+                                          : Image.asset(
+                                            'assets/default_avatar.png',
+                                          ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(post.username),
+                                      Text(_formatTimeAgo(post.dateRecorded)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(_stripHtmlTags(post.content)),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.comment),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showCommentDialog(context, post);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ...post.comments.map((comment) => _buildFullComment(context, comment, post)),
-                  ],
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _commentController,
+                              decoration: InputDecoration(
+                                hintText: 'Write a comment...',
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.send),
+                                  onPressed: () async {
+                                    if (_commentController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                      try {
+                                        final response = await _apiService
+                                            .postDiscussion(
+                                              postId: post.id,
+                                              content: _commentController.text,
+                                              mediaFiles:
+                                                  pickedFilesNotifier.value,
+                                              uploadedIds: _uploaded,
+                                              accessToken: _ciAccessToken ?? '',
+                                              apiUrl: apiUrl ?? '',
+                                            );
+                                        print(
+                                          'Response from the API: ${response.body}',
+                                        );
+                                        if (response.statusCode == 200) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Comment posted successfully',
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Failed to post comment: ${response.body}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Failed to add comment: $e',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ...post.comments.map(
+                              (comment) =>
+                                  _buildFullComment(context, comment, post),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
           ),
-        ),
-      ),
     );
   }
 
@@ -1080,10 +1615,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadData,
-            child: const Text('Retry'),
-          ),
+          ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
         ],
       ),
     );
@@ -1130,16 +1662,16 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           const SizedBox(height: 16),
           Text(
             emptyStateData[feedType]!['message'] as String,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[600],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             emptyStateData[feedType]!['action'] as String,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1147,5 +1679,3 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 }
-
-
