@@ -158,7 +158,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     }
   }
 
-
   Future<void> markAsRead(int id) async {
     if (id <= 0) return;
 
@@ -454,3 +453,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     );
   }
 }
+
+
+
