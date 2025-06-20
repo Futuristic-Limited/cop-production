@@ -137,21 +137,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     final Map<String, String> actionRoutes = {
       'new_message': '/messages',
       'bb_messages_new': '/messages',
-      'friendship_request': '/feed',
-      'friendship_accepted': '/feed',
+      'friendship_request': '/activity/feeds',
+      'friendship_accepted': '/activity/feeds',
       'group_invite': '/groups',
       'new_membership_request': '/groups',
       'bbp_new_reply_3782': '/events',
       'bbp_new_reply_4017': '/events',
       'bbp_new_reply_4044': '/events',
-      'reminder': '/reminders',
+      'notification': '/activity/feeds',
+      'bb_activity_comment': '/activity/feeds',
     };
 
-    final route = actionRoutes[notification.action];
+    print('🔍 Notification Action: ${notification.action}');
+
+    final route = actionRoutes[notification.action.trim()];
     if (route != null) {
+      print(' Navigating to: $route');
       Navigator.pushNamed(context, route);
       await markAsRead(notification.id);
     } else {
+      print('No matching route for action: "${notification.action}"');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No destination linked to this notification.')),
       );
@@ -274,6 +279,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                   'friendship_request': '/feed',
                   'group_invite': '/groups',
                   'forum_reply': '/events',
+                  'notification':'/activity/feeds'
 
                 };
 
