@@ -19,13 +19,13 @@ class CustomBottomNavBar extends StatelessWidget {
         switch (index) {
           case 0: // Home
             Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                    (route) => false
+              context,
+              '/home',
+              (route) => false,
             );
             break;
           case 1: // Activity Feed
-            Navigator.pushNamed(context, '/activity');
+            Navigator.pushNamed(context, '/activity/feeds');
             break;
           case 2: // Notifications
             Navigator.pushNamed(context, '/notifications');
@@ -39,10 +39,12 @@ class CustomBottomNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feeds'),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Notifications',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Communities'),
       ],
     );
   }
 }
-

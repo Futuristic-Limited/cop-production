@@ -291,189 +291,191 @@ class _GroupVideosState extends State<GroupVideos> {
           valueListenable: _uploadNotifier,
           builder: (context, _, __) {
             return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-
-                    if (_selectedImage != null) ...[
-                      const SizedBox(height: 16),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SizedBox(
-                            height: constraints.maxWidth * 0.4,
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: _videoThumbnail != null
-                                        ? Image.file(
-                                      _videoThumbnail!,
-                                      fit: BoxFit.cover,
-                                    )
-                                        : Container(
-                                      color: Colors.black,
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.play_circle_fill,
-                                          color: Colors.white70,
-                                          size: 60,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                if (!_isLoadingUpload)
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedImage = null;
-                                          _videoThumbnail = null;
-                                          _uploaded = null;
-                                        });
-                                        Navigator.pop(context);
-                                      },
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        padding: const EdgeInsets.all(4),
-                                        child: const Icon(Icons.close, color: Colors.white, size: 20),
-                                      ),
-                                    ),
-                                  ),
-
-                                if (_isLoadingUpload)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black45,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    ),
-
-                                  ),
-                              ],
-                            ),
-
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    Text(uploadVideoText),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _descriptionController,
-                      cursorColor: AppColors.aphrcGreen,
-                      style: const TextStyle(color: AppColors.aphrcGreen),
-                      decoration: InputDecoration(
-                        labelText: videoTextFieldPlaceholder,
-                        labelStyle: const TextStyle(color: AppColors.aphrcGreen),
-                        border: const OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.aphrcGreen, width: 2),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      maxLines: 1,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_selectedImage == null) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SizedBox(
+                              height: constraints.maxWidth * 0.4,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: _videoThumbnail != null
+                                          ? Image.file(
+                                        _videoThumbnail!,
+                                        fit: BoxFit.cover,
+                                      )
+                                          : Container(
+                                        color: Colors.black,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.play_circle_fill,
+                                            color: Colors.white70,
+                                            size: 60,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                
+                                  if (!_isLoadingUpload)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedImage = null;
+                                            _videoThumbnail = null;
+                                            _uploaded = null;
+                                          });
+                                          Navigator.pop(context);
+                                        },
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                        ),
+                                      ),
+                                    ),
+                
+                                  if (_isLoadingUpload)
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black45,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      ),
+                
+                                    ),
+                                ],
                               ),
-                              icon: const Icon(Icons.video_call_outlined),
-                              label: const Text('Video'),
-                              onPressed: () => _pickVideo(ImageSource.gallery),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              icon: const Icon(Icons.video_call),
-                              label: const Text('Record'),
-                              onPressed: () => _pickVideo(ImageSource.camera),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    if (_selectedImage != null) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: _saveNotifier,
-                          builder: (context, isSaving, _) {
-                            return ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.aphrcGreen,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
-                              child: isSaving
-                                  ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : const Text('Upload Video'),
+                
                             );
                           },
                         ),
-                      )
+                        const SizedBox(height: 16),
+                      ],
+                      Text(uploadVideoText),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _descriptionController,
+                        cursorColor: AppColors.aphrcGreen,
+                        style: const TextStyle(color: AppColors.aphrcGreen),
+                        decoration: InputDecoration(
+                          labelText: videoTextFieldPlaceholder,
+                          labelStyle: const TextStyle(color: AppColors.aphrcGreen),
+                          border: const OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.aphrcGreen, width: 2),
+                          ),
+                        ),
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 16),
+                      if (_selectedImage == null) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.video_call_outlined),
+                                label: const Text('Video'),
+                                onPressed: () => _pickVideo(ImageSource.gallery),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.video_call),
+                                label: const Text('Record'),
+                                onPressed: () => _pickVideo(ImageSource.camera),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _saveNotifier,
+                            builder: (context, isSaving, _) {
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.aphrcGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: (_isLoadingUpload || isSaving) ? null : _saveActivityPhoto,
+                                child: isSaving
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Text('Upload Video'),
+                              );
+                            },
+                          ),
+                        )
+                      ],
+                      const SizedBox(height: 16),
                     ],
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             );

@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:APHRC_COP/screens/auth/verify_otp_screen.dart';
 import 'package:APHRC_COP/components/forgot_password_link.dart';
 import 'package:APHRC_COP/screens/auth/forgot_password_screen.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';

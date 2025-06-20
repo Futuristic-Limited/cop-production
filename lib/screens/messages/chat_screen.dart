@@ -57,6 +57,12 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
     _init();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _init() async {
     await _fetchThread(widget.threadId);
   }
@@ -72,16 +78,20 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
   }
 
   Future<void> _fetchThread(int threadId) async {
+    print('Fetching thread with ID: $threadId');
     await _getAccessToken();
     try {
       if (threadId == 0) return;
 
       setState(() {
         isLoading = true;
+        errorMessage = null;
       });
 
       final response = await http.get(
-        Uri.parse('${buddyBossApiUrl}wp-json/buddyboss/v1/messages/$threadId'),
+        Uri.parse(
+          '${buddyBossApiUrl}wp-json/buddyboss/v1/messages/$threadId?per_page=100',
+        ),
         headers: {
           'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
@@ -160,7 +170,6 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
         if (widget.threadId > 0) {
           await _fetchThread(widget.threadId);
         } else {
-          // Refresh the thread after sending
           await _fetchThread(newThreadId);
         }
       } else {
@@ -182,6 +191,7 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Row(
           children: [
@@ -204,113 +214,135 @@ class _BuddyBossThreadScreenState extends State<BuddyBossThreadScreen> {
           onPressed: () => Navigator.pop(context, 'refresh'),
         ),
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : errorMessage != null
-              ? Center(child: Text(errorMessage!))
-              : Column(
-                children: [
-                  // Message List
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      itemCount: thread?.messages.length ?? 0,
-                      itemBuilder: (context, index) {
-                        final message = thread!.messages[index];
-                        final isSentByUser = message.senderId == widget.userId;
-
-                        return Align(
-                          alignment:
-                              isSentByUser
-                                  ? Alignment.centerLeft
-                                  : Alignment.centerRight,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 3),
-                            padding: const EdgeInsets.all(12),
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.of(context).size.width * 0.75,
+      body: SafeArea(
+        child:
+            isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(child: Text(errorMessage!))
+                : Column(
+                  children: [
+                    // Message List
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => FocusScope.of(context).unfocus(),
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            controller: _scrollController,
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                              left: 12,
+                              right: 12,
+                              top: 10,
                             ),
-                            decoration: BoxDecoration(
-                              color:
-                                  isSentByUser
-                                      ? const Color.fromARGB(255, 175, 174, 174)
-                                      : const Color(0xFF7A7E7A),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Attachments (Photos)
-                                if (message.bpMediaIds != null &&
-                                    message.bpMediaIds!.isNotEmpty)
-                                  MessageImageGallery(
-                                    mediaList: message.bpMediaIds!,
-                                    accessToken: _accessToken!,
-                                  ),
+                            itemCount: thread?.messages.length ?? 0,
+                            itemBuilder: (context, index) {
+                              final message = thread!.messages[index];
+                              final isSentByUser =
+                                  message.senderId == widget.userId;
 
-                                // Attachments (Videos)
-                                if (message.bpVideos != null &&
-                                    message.bpVideos!.isNotEmpty)
-                                  MessageVideoGallery(
-                                    videoList: message.bpVideos!,
-                                    accessToken: _accessToken!,
+                              return Align(
+                                alignment:
+                                    isSentByUser
+                                        ? Alignment.centerLeft
+                                        : Alignment.centerRight,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 3,
                                   ),
-                                // Attachments (Documents)
-                                if (message.bpDocuments != null &&
-                                    message.bpDocuments!.isNotEmpty)
-                                  MessageDocumentGallery(
-                                    documents: message.bpDocuments!,
-                                    accessToken: _accessToken!,
+                                  padding: const EdgeInsets.all(12),
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                        0.75,
                                   ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSentByUser
+                                            ? const Color.fromARGB(
+                                              255,
+                                              175,
+                                              174,
+                                              174,
+                                            )
+                                            : const Color(0xFF7A7E7A),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Attachments (Photos)
+                                      if (message.bpMediaIds != null &&
+                                          message.bpMediaIds!.isNotEmpty)
+                                        MessageImageGallery(
+                                          mediaList: message.bpMediaIds!,
+                                          accessToken: _accessToken!,
+                                        ),
 
-                                // Message Text
-                                if (message.message.rendered.isNotEmpty)
-                                  Text(
-                                    _stripHtml(message.message.rendered),
-                                    style: TextStyle(
-                                      color:
-                                          isSentByUser
-                                              ? Colors.white
-                                              : Colors.white,
-                                      fontSize: 15,
-                                    ),
-                                  ),
+                                      // Attachments (Videos)
+                                      if (message.bpVideos != null &&
+                                          message.bpVideos!.isNotEmpty)
+                                        MessageVideoGallery(
+                                          videoList: message.bpVideos!,
+                                          accessToken: _accessToken!,
+                                        ),
+                                      // Attachments (Documents)
+                                      if (message.bpDocuments != null &&
+                                          message.bpDocuments!.isNotEmpty)
+                                        MessageDocumentGallery(
+                                          documents: message.bpDocuments!,
+                                          accessToken: _accessToken!,
+                                        ),
 
-                                // Time
-                                SizedBox(
-                                  height: 5.0,
+                                      // Message Text
+                                      if (message.message.rendered.isNotEmpty)
+                                        Text(
+                                          _stripHtml(message.message.rendered),
+                                          style: TextStyle(
+                                            color:
+                                                isSentByUser
+                                                    ? Colors.white
+                                                    : Colors.white,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+
+                                      // Time
+                                      const SizedBox(height: 5.0),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          formatTimeHumanReadable(
+                                            message.dateSent,
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                isSentByUser
+                                                    ? Colors.white70
+                                                    : Colors.white70,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Text(
-                                    formatTimeHumanReadable(message.dateSent),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color:
-                                          isSentByUser
-                                              ? Colors.white70
-                                              : Colors.white70,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
-                  ),
 
-                  // Message Input
-                  ChatInputField(onSendMessage: _sendMessage),
-                ],
-              ),
+                    // Message Input
+                    ChatInputField(onSendMessage: _sendMessage),
+                  ],
+                ),
+      ),
     );
   }
 }

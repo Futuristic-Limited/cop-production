@@ -292,7 +292,7 @@ class _GroupMembersPageState extends State<GroupMembersScreen> {
                       leading: CircleAvatar(
                         radius: 24,
                         child: ClipOval(
-                          child: (member.avatarUrl != null && member.avatarUrl.isNotEmpty)
+                          child: (member.avatarUrl.isNotEmpty)
                               ? CachedNetworkImage(
                             imageUrl: member.avatarUrl,
                             placeholder: (context, url) => Image.asset('assets/default_avatar.png'),

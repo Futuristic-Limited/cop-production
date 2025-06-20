@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../../config/intl.dart';
 import '../../models/user_model.dart';
 import '../../models/groups_model.dart';
 import '../../models/group_invite_model.dart';
@@ -46,6 +45,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       });
     } catch (e) {
       print("Error in loadUserAndGroups: $e");
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -55,14 +55,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('Failed to load user')),
-      );
+      return const Scaffold(body: Center(child: Text('Failed to load user')));
     }
 
     return DefaultTabController(
@@ -71,10 +67,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         appBar: AppBar(
           title: Text(_titleForSection(selectedSection)),
           bottom: const TabBar(
-            tabs: [
-              Tab(text: 'My Groups'),
-              Tab(text: 'Invitations'),
-            ],
+            tabs: [Tab(text: 'My Groups'), Tab(text: 'Invitations')],
           ),
           actions: [
             IconButton(
@@ -83,18 +76,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
               onPressed: () {
                 loadUserAndGroups();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Syncing groups and invitations...')),
+                  const SnackBar(
+                    content: Text('Syncing groups and invitations...'),
+                  ),
                 );
               },
             ),
           ],
         ),
-        body: TabBarView(
-          children: [
-            _buildGroupsList(),
-            _buildInvitesList(),
-          ],
-        ),
+        body: TabBarView(children: [_buildGroupsList(), _buildInvitesList()]),
       ),
     );
   }
@@ -200,12 +190,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundImage: group.avatarUrl != null
-                      ? NetworkImage(group.avatarUrl!)
-                      : null,
-                  child: group.avatarUrl == null
-                      ? const Icon(Icons.group, size: 28, color: Colors.green)
-                      : null,
+                  backgroundImage:
+                      group.avatarUrl != null
+                          ? NetworkImage(group.avatarUrl!)
+                          : null,
+                  child:
+                      group.avatarUrl == null
+                          ? const Icon(
+                            Icons.group,
+                            size: 28,
+                            color: Colors.green,
+                          )
+                          : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -220,7 +216,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                             arguments: {
                               'slug': group.toJson()["slug"],
                               'groupId': group.toJson()["id"].toString(),
-                              'group': group.toJson()
+                              'group': group.toJson(),
                             },
                           );
                         },
@@ -244,7 +240,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       TextButton.icon(
                         onPressed: () => leaveGroup(group.id),
                         icon: const Icon(Icons.exit_to_app, color: Colors.red),
-                        label: const Text('Leave Group', style: TextStyle(color: Colors.red)),
+                        label: const Text(
+                          'Leave Group',
+                          style: TextStyle(color: Colors.red),
+                        ),
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -278,18 +277,26 @@ class _GroupsScreenState extends State<GroupsScreen> {
               backgroundImage: NetworkImage(invite.groupImage),
               onBackgroundImageError: (_, __) {},
             ),
-            title: Text(invite.groupName, style: const TextStyle(color: Colors.black)),
-            subtitle: Text("Invited by ${invite.inviterName}", style: const TextStyle(color: Colors.black87)),
+            title: Text(
+              invite.groupName,
+              style: const TextStyle(color: Colors.black),
+            ),
+            subtitle: Text(
+              "Invited by ${invite.inviterName}",
+              style: const TextStyle(color: Colors.black87),
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () => acceptInvite(invite.groupId, invite.invitationId),
+                  onPressed:
+                      () => acceptInvite(invite.groupId, invite.invitationId),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => rejectInvite(invite.groupId, invite.invitationId),
+                  onPressed:
+                      () => rejectInvite(invite.groupId, invite.invitationId),
                 ),
               ],
             ),
@@ -302,7 +309,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget _emptyMessage(String text) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Center(child: Text(text, style: const TextStyle(color: Colors.black))),
+      child: Center(
+        child: Text(text, style: const TextStyle(color: Colors.black)),
+      ),
     );
   }
 
@@ -312,10 +321,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/index'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode == 200) {
@@ -332,10 +338,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/invite/pending'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode == 200) {
@@ -357,10 +360,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'group_id': groupId,
-        'invitation_id': invitationId,
-      }),
+      body: jsonEncode({'group_id': groupId, 'invitation_id': invitationId}),
     );
 
     if (response.statusCode == 200) {
@@ -380,10 +380,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'group_id': groupId,
-        'invitation_id': invitationId,
-      }),
+      body: jsonEncode({'group_id': groupId, 'invitation_id': invitationId}),
     );
 
     if (response.statusCode == 200) {
@@ -403,16 +400,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'group_id': groupId,
-      }),
+      body: jsonEncode({'group_id': groupId}),
     );
 
     if (response.statusCode == 200) {
       await loadUserAndGroups();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You have left the group')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You have left the group')));
     } else {
       print("Failed to leave group: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -421,5 +416,3 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 }
-
-
