@@ -370,6 +370,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
         final combined = [
           ..._parseResponse(data['user_groups_posts'] ?? []),
           ..._parseResponse(data['followed_members_posts'] ?? []),
