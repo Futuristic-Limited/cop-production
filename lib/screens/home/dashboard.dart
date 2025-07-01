@@ -60,7 +60,6 @@ class _CustomizedDashboardState extends State<CustomizedDashboard>
               controller: _tabController,
               children: const [
                 GroupsScreen(),
-                GroupsScreen(),
                 NotificationsScreen(),
               ],
             ),

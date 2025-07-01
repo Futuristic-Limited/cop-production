@@ -6,12 +6,19 @@ import '../../services/token_preference.dart';
 class CommunityCard extends StatelessWidget {
   final Map<String, dynamic> community;
   final CommunityService communityService;
+  final List<int> joinedGroupIds;
 
   const CommunityCard({
     Key? key,
     required this.community,
     required this.communityService,
+    required this.joinedGroupIds,
   }) : super(key: key);
+
+  bool get isJoined {
+    final groupId = int.tryParse(community['id']?.toString() ?? '');
+    return groupId != null && joinedGroupIds.contains(groupId);
+  }
 
   void _handleJoin(BuildContext context, Map<String, dynamic> community) async {
     final isLoggedIn = await SaveAccessTokenService.isLoggedIn();
@@ -124,8 +131,7 @@ class CommunityCard extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (_) => GroupDetailScreen(group: community),
+                                builder: (_) => GroupDetailScreen(group: community),
                               ),
                             );
                           },
@@ -136,18 +142,31 @@ class CommunityCard extends StatelessWidget {
                           child: const Text("Read More"),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _handleJoin(context, community),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF66BB6A),
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(80, 35),
-                            shape: RoundedRectangleBorder(
+                        if (isJoined)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(8),
                             ),
+                            child: const Text(
+                              "Member",
+                              style: TextStyle(color: Colors.green),
+                            ),
+                          )
+                        else
+                          ElevatedButton(
+                            onPressed: () => _handleJoin(context, community),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF66BB6A),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(80, 35),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Join"),
                           ),
-                          child: const Text("Join"),
-                        ),
                       ],
                     ),
                   ],

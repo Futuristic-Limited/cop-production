@@ -65,9 +65,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_titleForSection(selectedSection)),
+          // title: Text(_titleForSection(selectedSection)),
+          title: const Text('My Communities'),
           bottom: const TabBar(
-            tabs: [Tab(text: 'My Groups'), Tab(text: 'Invitations')],
+            tabs: [Tab(text: 'My Communities'), Tab(text: 'Invitations')],
           ),
           actions: [
             IconButton(
