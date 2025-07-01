@@ -27,27 +27,75 @@ class CommunityCard extends StatelessWidget {
       return;
     }
 
-    final joined = await communityService.joinCommunity(
-      community['id'].toString(),
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 2.0,
+            ),
+            const SizedBox(width: 12),
+            Text('Joining ${community['name'] ?? 'group'}...'),
+          ],
+        ),
+        duration: const Duration(seconds: 30), // Long duration to allow for operation
+      ),
     );
 
-    if (joined) {
-      final updatedGroup = {
-        ...community,
-        'image': _getImageUrl(community),
-        'name': community['name'] ?? 'Untitled Group',
-        'description': community['description'] ?? 'No description available',
-      };
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GroupDetailScreen(group: updatedGroup),
-        ),
+    try {
+      final joined = await communityService.joinCommunity(
+        community['id'].toString(),
       );
-    } else {
+
+      // Dismiss the loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (joined) {
+        final updatedGroup = {
+          ...community,
+          'image': _getImageUrl(community),
+          'name': community['name'] ?? 'Untitled Group',
+          'description': community['description'] ?? 'No description available',
+        };
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully joined ${community['name'] ?? 'the group'}!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GroupDetailScreen(group: updatedGroup),
+          ),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to join the group. Please try again.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Dismiss the loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to join the group.")),
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
