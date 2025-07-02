@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../services/discussions_service.dart';
 import '../../models/discussions_model.dart';
+import '../../services/shared_prefs_service.dart';
 import '../groups/group_side_menu.dart';
 import 'discussion_detail_screen.dart';
 import 'discussion_post_form.dart';
@@ -28,10 +29,11 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
   bool isLoading = true;
   String errorMessage = '';
   String groupd = "gfgp";
-  bool _isFormVisible = true;
+  bool _isFormVisible = false;
   int? _editingIndex;
   final TextEditingController _editController = TextEditingController();
   String currentUserId = "";
+  String currentUserRole = "bbp_participant";
   int _selectedIndex = 0; // Add this
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -54,6 +56,13 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
         currentUserId = value!;
       });
     });
+
+    SharedPrefsService.getUserRole().then((value) {
+      setState(() {
+        currentUserRole = value!;
+      });
+
+    });
   }
 
   Future<void> fetchDiscussions() async {
@@ -71,6 +80,16 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
           isLoading = false;
         });
       }
+
+      if(currentUserRole == 'administrator' || currentUserRole == 'author' ||
+      currentUserRole == 'bbp_moderator'
+      ){
+        _isFormVisible = true;
+      }else{
+        _isFormVisible = false;
+      }
+
+
     } catch (e) {
       setState(() {
         errorMessage = 'Failed to load discussions.';
