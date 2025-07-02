@@ -19,7 +19,6 @@ class LoginScreen extends StatefulWidget {
 
   });
 
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -111,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Navigate to home page
         Navigator.pushReplacementNamed(context, '/home');
+        // Navigator.pushReplacementNamed(context, '/activity/feeds');
       } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",
@@ -296,9 +296,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-
-
-
 
                     const Text(
                       'Sign in to continue',

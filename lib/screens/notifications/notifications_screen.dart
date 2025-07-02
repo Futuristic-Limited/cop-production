@@ -158,7 +158,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     } else {
       print('No matching route for action: "${notification.action}"');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No destination linked to this notification.')),
+        const SnackBar(content: Text('Message was deleted')),
       );
     }
   }
