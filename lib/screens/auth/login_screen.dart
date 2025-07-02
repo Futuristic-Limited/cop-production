@@ -109,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Navigate to home page
         Navigator.pushReplacementNamed(context, '/home');
+        // Navigator.pushReplacementNamed(context, '/activity/feeds');
       } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",

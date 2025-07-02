@@ -238,17 +238,23 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         style: const TextStyle(color: Colors.black54),
                       ),
                       const SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () => leaveGroup(group.id),
-                        icon: const Icon(Icons.exit_to_app, color: Colors.red),
-                        label: const Text(
-                          'Leave Group',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Leave Group Button
+                          TextButton.icon(
+                            onPressed: () => leaveGroup(group.id),
+                            icon: const Icon(Icons.exit_to_app, color: Colors.red),
+                            label: const Text('Leave Group'),
+                          ),
+
+                          // Invite Button
+                          TextButton.icon(
+                            onPressed: () => inviteToGroup(group.id),
+                            icon: const Icon(Icons.person_add_alt_1, color: Colors.blue),
+                            label: const Text('Invite'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -413,6 +419,127 @@ class _GroupsScreenState extends State<GroupsScreen> {
       print("Failed to leave group: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to leave the group')),
+      );
+    }
+  }
+
+  Future<void> inviteToGroup(int groupId) async {
+    final inviteeController = TextEditingController();
+    final messageController = TextEditingController();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Invite to Group',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: inviteeController,
+                  decoration: const InputDecoration(
+                    labelText: 'User Email or Username',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: messageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Optional Message',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (inviteeController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter user details'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        await _sendGroupInvite(
+                          groupId,
+                          inviteeController.text,
+                          messageController.text,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                      ),
+                      child: const Text('Send Invite'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _sendGroupInvite(
+      int groupId,
+      String invitee,
+      String message,
+      ) async {
+    final apiUrl = dotenv.env['API_URL'];
+    final token = await SaveAccessTokenService.getAccessToken();
+
+    try {
+      final response = await http.post(
+        Uri.parse('$apiUrl/groups/send/invites'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'group_id': groupId,
+          'user_ids': [invitee], // Or use appropriate format for your API
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invite sent successfully')),
+        );
+      } else {
+        final error = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error['message'] ?? 'Failed to send invite')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }
