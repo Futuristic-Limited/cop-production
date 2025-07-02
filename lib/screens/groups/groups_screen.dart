@@ -55,24 +55,34 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('Failed to load user')));
+      return const Scaffold(
+        body: Center(
+          child: Text('Failed to load user'),
+        ),
+      );
     }
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          // title: Text(_titleForSection(selectedSection)),
           title: const Text('My Communities'),
           bottom: const TabBar(
-            tabs: [Tab(text: 'My Communities'), Tab(text: 'Invitations')],
+            tabs: [
+              Tab(text: 'My Communities'),
+              Tab(text: 'Invitations'),
+            ],
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.sync),
+              icon: const Icon(Icons.sync, color: Colors.grey),
               tooltip: 'Sync',
               onPressed: () {
                 loadUserAndGroups();
@@ -85,98 +95,24 @@ class _GroupsScreenState extends State<GroupsScreen> {
             ),
           ],
         ),
-        body: TabBarView(children: [_buildGroupsList(), _buildInvitesList()]),
+        body: TabBarView(
+          children: [
+            _buildGroupsList(),
+            _buildInvitesList(),
+          ],
+        ),
       ),
     );
   }
 
-  String _titleForSection(int index) {
-    switch (index) {
-      case 0:
-        return 'Home';
-      case 1:
-        return 'Timeline';
-      case 2:
-        return 'Profile';
-      case 3:
-        return 'My Groups';
-      case 4:
-        return 'Videos';
-      case 5:
-        return 'Photos';
-      case 6:
-        return 'Forums';
-      case 7:
-        return 'Documents';
-      default:
-        return '';
-    }
-  }
-
-  Widget _buildSectionBody(String userJoinDate, String userStatus) {
-    switch (selectedSection) {
-      case 0:
-        return _buildHomePlaceholder();
-      case 1:
-        return _buildTimelinePlaceholder();
-      case 2:
-        return _buildProfilePlaceholder();
-      case 3:
-        return _buildGroupsList();
-      case 4:
-        return _buildVideosPlaceholder();
-      case 5:
-        return _buildPhotosPlaceholder();
-      case 6:
-        return _buildForumsPlaceholder();
-      case 7:
-        return _buildDocumentsPlaceholder();
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildHomePlaceholder() {
-    Future.microtask(() {
-      if (ModalRoute.of(context)?.settings.name != '/home') {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    });
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildTimelinePlaceholder() {
-    return const Center(child: Text('Timeline content goes here'));
-  }
-
-  Widget _buildProfilePlaceholder() {
-    Future.microtask(() {
-      if (ModalRoute.of(context)?.settings.name != '/profile') {
-        Navigator.pushReplacementNamed(context, '/profile');
-      }
-    });
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildVideosPlaceholder() {
-    return const Center(child: Text('Videos content goes here'));
-  }
-
-  Widget _buildPhotosPlaceholder() {
-    return const Center(child: Text('Photos content goes here'));
-  }
-
-  Widget _buildForumsPlaceholder() {
-    return const Center(child: Text('Forums content goes here'));
-  }
-
-  Widget _buildDocumentsPlaceholder() {
-    return const Center(child: Text('Documents content goes here'));
-  }
-
   Widget _buildGroupsList() {
     if (groups.isEmpty) {
-      return _emptyMessage("You haven't joined any groups yet.");
+      return _buildEmptyState(
+        icon: Icons.group,
+        title: "No Communities Yet",
+        message: "You haven't joined any communities yet.",
+        actionText: "Explore communities to join",
+      );
     }
 
     return ListView.builder(
@@ -191,18 +127,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundImage:
-                      group.avatarUrl != null
-                          ? NetworkImage(group.avatarUrl!)
-                          : null,
-                  child:
-                      group.avatarUrl == null
-                          ? const Icon(
-                            Icons.group,
-                            size: 28,
-                            color: Colors.green,
-                          )
-                          : null,
+                  backgroundImage: group.avatarUrl != null
+                      ? NetworkImage(group.avatarUrl!)
+                      : null,
+                  child: group.avatarUrl == null
+                      ? const Icon(
+                    Icons.group,
+                    size: 28,
+                    color: Colors.grey,
+                  )
+                      : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -241,18 +175,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Leave Group Button
                           TextButton.icon(
                             onPressed: () => leaveGroup(group.id),
-                            icon: const Icon(Icons.exit_to_app, color: Colors.red),
-                            label: const Text('Leave Group'),
+                            icon: const Icon(Icons.exit_to_app, color: Colors.grey),
+                            label: const Text('Leave Group', style: TextStyle(color: Colors.grey)),
                           ),
-
-                          // Invite Button
                           TextButton.icon(
                             onPressed: () => inviteToGroup(group.id),
-                            icon: const Icon(Icons.person_add_alt_1, color: Colors.blue),
-                            label: const Text('Invite'),
+                            icon: const Icon(Icons.person_add_alt_1, color: Colors.grey),
+                            label: const Text('Invite', style: TextStyle(color: Colors.grey)),
                           ),
                         ],
                       ),
@@ -269,7 +200,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   Widget _buildInvitesList() {
     if (invitations.isEmpty) {
-      return _emptyMessage("You have no group invitations.");
+      return _buildEmptyState(
+        icon: Icons.mail_outline,
+        title: "No Invitations",
+        message: "You don't have any pending community invitations.",
+        actionText: "Ask community admins to invite you",
+      );
     }
 
     return ListView.builder(
@@ -296,14 +232,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed:
-                      () => acceptInvite(invite.groupId, invite.invitationId),
+                  icon: const Icon(Icons.check, color: Colors.grey),
+                  onPressed: () => acceptInvite(invite.groupId, invite.invitationId),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed:
-                      () => rejectInvite(invite.groupId, invite.invitationId),
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => rejectInvite(invite.groupId, invite.invitationId),
                 ),
               ],
             ),
@@ -313,11 +247,51 @@ class _GroupsScreenState extends State<GroupsScreen> {
     );
   }
 
-  Widget _emptyMessage(String text) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Center(
-        child: Text(text, style: const TextStyle(color: Colors.black)),
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String actionText,
+    Color iconColor = Colors.grey,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: iconColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              actionText,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -328,7 +302,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/index'),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
     );
 
     if (response.statusCode == 200) {
@@ -345,7 +322,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
     final response = await http.get(
       Uri.parse('$apiUrl/groups/invite/pending'),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
     );
 
     if (response.statusCode == 200) {
@@ -367,13 +347,26 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'group_id': groupId, 'invitation_id': invitationId}),
+      body: jsonEncode({
+        'group_id': groupId,
+        'invitation_id': invitationId,
+      }),
     );
 
     if (response.statusCode == 200) {
       loadUserAndGroups();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invitation accepted successfully'),
+        ),
+      );
     } else {
       print("Failed to accept invite: ${response.body}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to accept invitation'),
+        ),
+      );
     }
   }
 
@@ -387,13 +380,26 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'group_id': groupId, 'invitation_id': invitationId}),
+      body: jsonEncode({
+        'group_id': groupId,
+        'invitation_id': invitationId,
+      }),
     );
 
     if (response.statusCode == 200) {
       loadUserAndGroups();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invitation declined'),
+        ),
+      );
     } else {
       print("Failed to reject invite: ${response.body}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to decline invitation'),
+        ),
+      );
     }
   }
 
@@ -412,13 +418,17 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
     if (response.statusCode == 200) {
       await loadUserAndGroups();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('You have left the group')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You have left the community'),
+        ),
+      );
     } else {
       print("Failed to leave group: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to leave the group')),
+        const SnackBar(
+          content: Text('Failed to leave the community'),
+        ),
       );
     }
   }
@@ -441,7 +451,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Invite to Group',
+                  'Invite to Community',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -522,25 +532,33 @@ class _GroupsScreenState extends State<GroupsScreen> {
         },
         body: jsonEncode({
           'group_id': groupId,
-          'user_ids': [invitee], // Or use appropriate format for your API
+          'user_ids': [invitee],
           'message': message,
         }),
       );
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invite sent successfully')),
+          const SnackBar(
+            content: Text('Invite sent successfully'),
+          ),
         );
       } else {
         final error = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error['message'] ?? 'Failed to send invite')),
+          SnackBar(
+            content: Text(error['message'] ?? 'Failed to send invite'),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+        ),
       );
     }
   }
 }
+
+
