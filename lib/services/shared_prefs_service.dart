@@ -9,13 +9,14 @@ class SharedPrefsService {
     required String tokenExpiresAt,
     required String userName,
     required String userId,
-    required String buddyBossToken,
+    required String buddyBossToken, required String userRole,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
     await prefs.setString('token_expires_at', tokenExpiresAt);
     await prefs.setString('user_name', userName);
+    await prefs.setString('user_role', userRole);
     await prefs.setString('user_id', userId);
     await prefs.setBool('is_logged_in', true);
     await prefs.setString('buddy_boss_token', buddyBossToken);
@@ -99,6 +100,11 @@ class SharedPrefsService {
   static Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_name');
+  }
+
+  static Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role');
   }
 
   static Future<String?> getUserId() async {

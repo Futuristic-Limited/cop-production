@@ -444,10 +444,13 @@ class _PostFormWidgetState extends State<PostFormWidget> {
                         minHeight: 40,
                         maxHeight: 120,
                       ),
+
+
                       child: Scrollbar(
                         child: TextField(
                           controller: _descController,
-                          maxLines: null,
+                          minLines: 3, // Show at least 3 lines
+                          maxLines: null, // Allow it to grow with content
                           keyboardType: TextInputType.multiline,
                           style: const TextStyle(fontSize: 16),
                           decoration: const InputDecoration(
@@ -460,6 +463,27 @@ class _PostFormWidgetState extends State<PostFormWidget> {
                           ),
                         ),
                       ),
+
+
+                      // child: Scrollbar(
+                      //   child: TextField(
+                      //     controller: _descController,
+                      //     maxLines: null,
+                      //     keyboardType: TextInputType.multiline,
+                      //     style: const TextStyle(fontSize: 16),
+                      //     decoration: const InputDecoration(
+                      //       hintText: "Type a message...",
+                      //       border: InputBorder.none,
+                      //       contentPadding: EdgeInsets.symmetric(
+                      //         horizontal: 16,
+                      //         vertical: 12,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+
+
+
                     ),
                   ),
 

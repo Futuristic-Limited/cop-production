@@ -98,31 +98,70 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
                   )
                 ],
               ),
+
               Container(
-                //color: const Color(0xFF7BC148),
+                margin: const EdgeInsets.symmetric(horizontal: 20), // 5px left and right margin
                 padding: const EdgeInsets.all(0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 2),
-                    Text(widget.discussion.post_date ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      widget.discussion.post_date ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: const [
-                        Expanded(child: Text('Creator', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Text('Topic', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12))),
+                        Expanded(
+                          child: Text(
+                            'Creator',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Topic',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     Row(
                       children: [
-                        Expanded(child: Text(widget.discussion.display_name ?? '', style: const TextStyle(color: Colors.black87, fontSize: 12))),
-                        Expanded(child: Text(widget.discussion.post_title ?? '', style: const TextStyle(color: Colors.black87, fontSize: 12))),
+                        Expanded(
+                          child: Text(
+                            widget.discussion.display_name ?? '',
+                            style: const TextStyle(color: Colors.black87, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            widget.discussion.post_title ?? '',
+                            style: const TextStyle(color: Colors.black87, fontSize: 12),
+                          ),
+                        ),
                       ],
                     ),
                     const Divider(height: 10),
                   ],
                 ),
               ),
+
+
+
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
