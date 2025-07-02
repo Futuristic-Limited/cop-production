@@ -1061,10 +1061,20 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.comment),
-                  onPressed: () => _showCommentDialog(context, activity),
-                  tooltip: 'Comment',
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.comment),
+                      onPressed: () => _showCommentDialog(context, activity),
+                      tooltip: 'Comment',
+                    ),
+                    Text(
+                      'Comment',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
                 const Spacer(),
                 Text(
