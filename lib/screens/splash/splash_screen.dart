@@ -127,7 +127,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14.5,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         color: Colors.white60,
                         height: 1.4,
                         letterSpacing: 0.4,

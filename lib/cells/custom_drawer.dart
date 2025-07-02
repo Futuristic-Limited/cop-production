@@ -20,36 +20,37 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final List<Animation<Offset>> _slideAnimations;
+  late AnimationController _controller;
+  late List<Animation<Offset>> _slideAnimations;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    _createAnimations();
+    _controller.forward();
+  }
 
-    final itemCount = widget.isLoggedIn ? 8 : 2;
+  @override
+  void didUpdateWidget(CustomDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isLoggedIn != widget.isLoggedIn) {
+      _createAnimations();
+      _controller.forward(from: 0); // Restart animation when login state changes
+    }
+  }
+
+  void _createAnimations() {
+    final itemCount = widget.isLoggedIn ? 5 : 2;
     _slideAnimations = List.generate(
       itemCount,
-          (index) => Tween<Offset>(
-        begin: const Offset(1, 0),
-        end: Offset.zero,
-      ).animate(
+          (index) => Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(
-            index * 0.1,
-            1.0,
-            curve: Curves.easeOut,
-          ),
+          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
         ),
       ),
     );
-
-    _controller.forward();
   }
 
   @override
@@ -75,20 +76,11 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black,
-                          blurRadius: 6,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
+                      boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 6, offset: Offset(2, 2))],
+                      border: Border.all(color: Colors.white, width: 3),
                     ),
                     child: const Opacity(
-                      opacity: 0.85, // Set desired opacity
+                      opacity: 0.85,
                       child: CircleAvatar(
                         radius: 28,
                         backgroundColor: Colors.white,
@@ -96,24 +88,11 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
                       ),
                     ),
                   ),
-                  // CircleAvatar(
-                  //   radius: 28,
-                  //   backgroundColor: Colors.white,
-                  //   child: Icon(
-                  //     Icons.group,
-                  //     color: Color(0xFF8BC53F),
-                  //     size: 30,
-                  //   ),
-                  // ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Community Hub',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -123,9 +102,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: widget.isLoggedIn
-                    ? _buildLoggedInItems(context)
-                    : _buildGuestItems(context),
+                children: widget.isLoggedIn ? _buildLoggedInItems(context) : _buildGuestItems(context),
               ),
             ),
           ],
@@ -140,31 +117,10 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
       _animatedDrawerItem(1, context, Icons.inbox, 'Messages', '/messages'),
       _animatedDrawerItem(2, context, Icons.account_box, 'Account', '/home/account'),
       _animatedDrawerItem(3, context, Icons.settings, 'Tools', '/home/tools'),
-
-      /*
-      _animatedDrawerItem(1, context, Icons.settings, 'Settings', '/settings'),
-      FutureBuilder<int>(
-        future: _getUnreadNotificationCount(),
-        builder: (context, snapshot) {
-          final count = snapshot.data ?? 0;
-          return _animatedDrawerItem(
-            2,
-            context,
-            Icons.notifications,
-            'Notifications',
-            '/notifications',
-            badgeCount: count,
-          );
-        },
-      ),
-      _animatedDrawerItem(3, context, Icons.group, 'Groups', '/groups'),
-      _animatedDrawerItem(4, context, Icons.message, 'Messages', '/messages'),
-      _animatedDrawerItem(5, context, Icons.email, 'Email Invite', '/email_invites'),
-      _animatedDrawerItem(6, context, Icons.person, 'Profile', '/profile'),
-      _animatedDrawerItem(7, context, Icons.insert_drive_file, 'Files', '/files'),*/
       const SizedBox(height: 8),
-      SlideTransition(
-        position: _slideAnimations[7],
+      _slideAnimations.length > 4
+          ? SlideTransition(
+        position: _slideAnimations[4],
         child: HoverCard(
           baseColor: Colors.white,
           hoverColor: Colors.red.withOpacity(0.1),
@@ -178,7 +134,8 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
             },
           ),
         ),
-      ),
+      )
+          : Container(), // Fallback if animations aren't ready
     ];
   }
 
@@ -197,6 +154,10 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
       String routeName, {
         int? badgeCount,
       }) {
+    if (index >= _slideAnimations.length) {
+      return Container(); // Safe fallback
+    }
+
     return SlideTransition(
       position: _slideAnimations[index],
       child: HoverCard(
@@ -286,3 +247,7 @@ class _HoverCardState extends State<HoverCard> {
     );
   }
 }
+
+
+
+

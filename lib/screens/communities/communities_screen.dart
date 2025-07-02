@@ -17,6 +17,7 @@ class CommunitiesScreen extends StatefulWidget {
 class _CommunitiesScreenState extends State<CommunitiesScreen> {
   final CommunityService _communityService = CommunityService();
   List<dynamic> _communities = [];
+  List<int> _joinedGroupIds = [];
   bool _isLoading = true;
   bool _hasError = false;
   final TextEditingController _searchController = TextEditingController();
@@ -27,6 +28,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
   void initState() {
     super.initState();
     _fetchCommunities();
+    _fetchJoinedGroups();
   }
 
   Future<void> _fetchCommunities() async {
@@ -72,6 +74,19 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
       _currentIndex = index;
     });
     // The navigation is already handled in the CustomBottomNavBar
+  }
+
+  Future<void> _fetchJoinedGroups() async {
+    try {
+      final ids = await _communityService.getJoinedGroupIds();
+      if (mounted) {
+        setState(() {
+          _joinedGroupIds = ids;
+        });
+      }
+    } catch (e) {
+      print('Error loading joined groups: $e');
+    }
   }
 
   @override
@@ -163,6 +178,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
           return CommunityCard(
             community: community,
             communityService: _communityService,
+            joinedGroupIds: _joinedGroupIds,
           );
         },
       ),

@@ -20,7 +20,6 @@ class LoginScreen extends StatefulWidget {
 
   });
 
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -95,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           refreshToken: data['tokens']['refresh_token'] ?? '',
           tokenExpiresAt: data['tokens']['token_expires_at'] ?? '',
           userName: data['user_name'] ?? '',
+          userRole: data['user_role'] ?? 'bbp_participant',
           userId: data['user_id'].toString(),
           buddyBossToken: data['token'] ?? '',
         );
@@ -112,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await generateAndSaveBuddyBossToken(email, password);
 
         Navigator.pushReplacementNamed(context, '/home');
+        // Navigator.pushReplacementNamed(context, '/activity/feeds');
       } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",
@@ -308,9 +309,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-
-
-
 
                     const Text(
                       'Sign in to continue',

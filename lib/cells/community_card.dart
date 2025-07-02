@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/discussions/index.dart';
 import '../screens/groups/group_detail_screen.dart';
 import '../../services/community_service.dart';
 import '../../services/token_preference.dart';
@@ -6,12 +7,19 @@ import '../../services/token_preference.dart';
 class CommunityCard extends StatelessWidget {
   final Map<String, dynamic> community;
   final CommunityService communityService;
+  final List<int> joinedGroupIds;
 
   const CommunityCard({
     Key? key,
     required this.community,
     required this.communityService,
+    required this.joinedGroupIds,
   }) : super(key: key);
+
+  bool get isJoined {
+    final groupId = int.tryParse(community['id']?.toString() ?? '');
+    return groupId != null && joinedGroupIds.contains(groupId);
+  }
 
   void _handleJoin(BuildContext context, Map<String, dynamic> community) async {
     final isLoggedIn = await SaveAccessTokenService.isLoggedIn();
@@ -20,27 +28,77 @@ class CommunityCard extends StatelessWidget {
       return;
     }
 
-    final joined = await communityService.joinCommunity(
-      community['id'].toString(),
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 2.0,
+            ),
+            const SizedBox(width: 12),
+            Text('Joining ${community['name'] ?? 'group'}...'),
+          ],
+        ),
+        duration: const Duration(seconds: 30), // Long duration to allow for operation
+      ),
     );
 
-    if (joined) {
-      final updatedGroup = {
-        ...community,
-        'image': _getImageUrl(community),
-        'name': community['name'] ?? 'Untitled Group',
-        'description': community['description'] ?? 'No description available',
-      };
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GroupDetailScreen(group: updatedGroup),
-        ),
+    try {
+      final joined = await communityService.joinCommunity(
+        community['id'].toString(),
       );
-    } else {
+
+      // Dismiss the loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (joined) {
+        final updatedGroup = {
+          ...community,
+          'image': _getImageUrl(community),
+          'name': community['name'] ?? 'Untitled Group',
+          'description': community['description'] ?? 'No description available',
+          'slug': community['slug'] ?? 'No slug available'
+        };
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully joined ${community['name'] ?? 'the group'}!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            // builder: (_) => GroupDetailScreen(group: updatedGroup),
+            builder: (_) => DiscussionsScreen(groupd: community['slug'], groupId: community['id'].toString(), groupDetails: community),
+          ),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to join the group. Please try again.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Dismiss the loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to join the group.")),
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -124,8 +182,7 @@ class CommunityCard extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (_) => GroupDetailScreen(group: community),
+                                builder: (_) => GroupDetailScreen(group: community),
                               ),
                             );
                           },
@@ -136,18 +193,31 @@ class CommunityCard extends StatelessWidget {
                           child: const Text("Read More"),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _handleJoin(context, community),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF66BB6A),
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(80, 35),
-                            shape: RoundedRectangleBorder(
+                        if (isJoined)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(8),
                             ),
+                            child: const Text(
+                              "Member",
+                              style: TextStyle(color: Colors.green),
+                            ),
+                          )
+                        else
+                          ElevatedButton(
+                            onPressed: () => _handleJoin(context, community),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF66BB6A),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(80, 35),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Join"),
                           ),
-                          child: const Text("Join"),
-                        ),
                       ],
                     ),
                   ],

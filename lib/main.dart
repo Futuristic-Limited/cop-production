@@ -9,7 +9,13 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
 
-  OneSignal.initialize('53cf696a-7965-4976-bc38-9a9cc224dcae');
+  final oneSignalAppId = dotenv.env['ONESIGNAL_APP_ID'];
+  if (oneSignalAppId == null || oneSignalAppId.isEmpty) {
+    throw Exception("ONESIGNAL_APP_ID not found in .env");
+  }
+
+
+  OneSignal.initialize(oneSignalAppId);
   OneSignal.Notifications.requestPermission(true);
 
   runApp(const MyApp());

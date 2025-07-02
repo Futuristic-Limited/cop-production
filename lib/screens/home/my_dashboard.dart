@@ -24,11 +24,9 @@ class _MyDashboardScreenState extends State<MyDashboardScreen>
   @override
   void initState() {
     super.initState();
-
     _tabs = _getTabsByType(widget.stype);
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(_handleTabSelection);
-
     _activeScreen = _buildScreen(0);
   }
 

@@ -176,4 +176,29 @@ class CommunityService {
       throw Exception('Failed to fetch user id: ${response.statusCode}');
     }
   }
+
+  Future<List<int>> getJoinedGroupIds() async {
+    final token = await _getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/groups/index'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List joinedGroups = data['user']['joined_groups'] ?? [];
+        return joinedGroups.map<int>((group) => int.parse(group['group_id'])).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching joined groups: $e');
+      return [];
+    }
+  }
 }

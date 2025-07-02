@@ -104,7 +104,7 @@ class _LandingPageState extends State<LandingPage> {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: CommunityCard(
                               community: communities[index],
-                              communityService: communityService,
+                              communityService: communityService, joinedGroupIds: [],
                             ),
                           ),
                     ),
