@@ -111,8 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await generateAndSaveBuddyBossToken(email, password);
 
-        Navigator.pushReplacementNamed(context, '/home');
-        // Navigator.pushReplacementNamed(context, '/activity/feeds');
+       Navigator.pushReplacementNamed(context, '/home');
+        //Navigator.pushReplacementNamed(context, '/activity/feeds');
       } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",
