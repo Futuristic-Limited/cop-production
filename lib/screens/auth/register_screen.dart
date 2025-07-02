@@ -77,6 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           userName: data['user_name'] ?? '',
           userId: data['user_id'].toString(),
           buddyBossToken: data['token'] ?? '',
+          userRole: data['user_role'] ?? '',
         );
 
 

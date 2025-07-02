@@ -130,6 +130,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
           userName: data['user_name'] ?? '',
           userId: data['user_id'].toString(),
           buddyBossToken: data['token'] ?? '',
+          userRole: data['user_role'] ?? '',
         );
         // Save the access token to SharedPreferences
         await SaveAccessTokenService.saveAccessToken(

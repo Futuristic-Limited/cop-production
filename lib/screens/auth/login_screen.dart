@@ -83,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
           refreshToken: data['tokens']['refresh_token'] ?? '',
           tokenExpiresAt: data['tokens']['token_expires_at'] ?? '',
           userName: data['user_name'] ?? '',
+          userRole: data['user_role'] ?? 'bbp_participant',
           userId: data['user_id'].toString(),
           buddyBossToken: data['token'] ?? '',
         );
