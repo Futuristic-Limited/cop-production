@@ -19,7 +19,6 @@ class LoginScreen extends StatefulWidget {
 
   });
 
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -295,9 +294,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-
-
-
 
                     const Text(
                       'Sign in to continue',
