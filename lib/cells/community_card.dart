@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/discussions/index.dart';
 import '../screens/groups/group_detail_screen.dart';
 import '../../services/community_service.dart';
 import '../../services/token_preference.dart';
@@ -58,6 +59,7 @@ class CommunityCard extends StatelessWidget {
           'image': _getImageUrl(community),
           'name': community['name'] ?? 'Untitled Group',
           'description': community['description'] ?? 'No description available',
+          'slug': community['slug'] ?? 'No slug available'
         };
 
         // Show success message
@@ -72,7 +74,8 @@ class CommunityCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => GroupDetailScreen(group: updatedGroup),
+            // builder: (_) => GroupDetailScreen(group: updatedGroup),
+            builder: (_) => DiscussionsScreen(groupd: community['slug'], groupId: community['id'].toString(), groupDetails: community),
           ),
         );
       } else {
