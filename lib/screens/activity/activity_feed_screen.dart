@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:APHRC_COP/screens/activity/attacment-preview.dart';
 import 'package:APHRC_COP/screens/activity/video-thumbnail.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
@@ -14,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import '../../models/activity_item_model.dart';
+import '../../services/shared_prefs_service.dart';
 import '../../utils/constants.dart';
 import 'api_service.dart';
 
@@ -43,13 +43,19 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     super.initState();
     _loadData();
     _getAccessToken();
-    _allActivities.then((activities) {
-      if (activities.isNotEmpty) {
-        setState(() {
-          _currentUserId = activities.first.userId;
-        });
-      }
+
+    SharedPrefsService.getUserId().then((value) {
+      setState(() {
+        _currentUserId = value!;
+      });
     });
+    // _allActivities.then((activities) {
+    //   if (activities.isNotEmpty) {
+    //     setState(() {
+    //       _currentUserId = activities.first.userId;
+    //     });
+    //   }
+    // });
   }
 
   Future<void> _loadData() async {

@@ -41,15 +41,15 @@ class _ChatInputFieldState extends State<ChatInputField> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
@@ -112,7 +112,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
       if (sizeInMB > widget.maxFileSizeMB) {
         await _showErrorDialog(
           'Video too large (${sizeInMB.toStringAsFixed(1)}MB). '
-          'Maximum allowed: ${widget.maxFileSizeMB}MB',
+              'Maximum allowed: ${widget.maxFileSizeMB}MB',
         );
         return false;
       }
@@ -162,14 +162,18 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _isUploading = true;
       });
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${apiUrl}wp-json/wp/v2/media'),
-      );
-
-      request.headers['Authorization'] = 'Bearer $_ciAccessToken';
-
+      final url = Uri.parse('${apiUrl}wp-json/wp/v2/media');
       final contentType = _getContentType(file.path);
+
+      print("Uploading file to: $url");
+      print("File path: ${file.path}");
+      print("Content type: $contentType");
+      print("Authorization token: $_ciAccessToken");
+
+      var request = http.MultipartRequest('POST', url);
+      request.headers['Authorization'] = 'Bearer $_ciAccessToken';
+      request.headers['Content-Disposition'] = 'attachment; filename="${file.path.split('/').last}"';
+      request.headers['Content-Type'] = contentType.toString();
 
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -180,13 +184,21 @@ class _ChatInputFieldState extends State<ChatInputField> {
       );
 
       final response = await request.send();
+      print("Response status: ${response.statusCode}");
+
+      final responseData = await response.stream.bytesToString();
+      print("Response body: $responseData");
+
+      setState(() {
+        _isUploading = false;
+      });
+
       if (response.statusCode == 201) {
-        setState(() {
-          _isUploading = false;
-        });
-        final responseData = await response.stream.bytesToString();
         final jsonData = json.decode(responseData);
         return {'id': jsonData['id']};
+      } else {
+        // Print details if the upload failed
+        print("Upload failed with status ${response.statusCode}");
       }
 
       return null;
@@ -199,6 +211,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
+
   Future<void> _uploadAndAdd(File file) async {
     final result = await _uploadMedia(file);
     if (!mounted) return; // avoid setState after dispose
@@ -209,7 +222,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
       });
     } else {
       if (!mounted) return;
-      await _showErrorDialog('Failed to upload ${file.path.split('/').last}.');
+      await _showErrorDialog('Failed to upload the file.');
     }
   }
 
@@ -238,52 +251,52 @@ class _ChatInputFieldState extends State<ChatInputField> {
       context: context,
       builder:
           (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Photo Library'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('Take Photo'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _takePicture();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.video_library),
-                  title: const Text('Video Library'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickVideo();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.videocam),
-                  title: const Text('Record Video'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _recordVideo();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.attach_file),
-                  title: const Text('Other Files'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAnyFile();
-                  },
-                ),
-              ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photo Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
             ),
-          ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _takePicture();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library),
+              title: const Text('Video Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickVideo();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam),
+              title: const Text('Record Video'),
+              onTap: () {
+                Navigator.pop(context);
+                _recordVideo();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: const Text('Other Files'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAnyFile();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -297,17 +310,17 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
     return thumbnailPath != null
         ? Image.file(
-          File(thumbnailPath),
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-        )
+      File(thumbnailPath),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+    )
         : Container(
-          width: 100,
-          height: 100,
-          color: Colors.grey[200],
-          child: const Icon(Icons.videocam, size: 40),
-        );
+      width: 100,
+      height: 100,
+      color: Colors.grey[200],
+      child: const Icon(Icons.videocam, size: 40),
+    );
   }
 
   Widget _buildAttachmentPreview(File file, int index) {
@@ -446,16 +459,16 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     border: InputBorder.none,
                     hintStyle: TextStyle(
                       color:
-                          _isUploading
-                              ? Colors.grey
-                              : null, // Grey out hint when disabled
+                      _isUploading
+                          ? Colors.grey
+                          : null, // Grey out hint when disabled
                     ),
                   ),
                   style: TextStyle(
                     color:
-                        _isUploading
-                            ? Colors.grey
-                            : null, // Grey out text when disabled
+                    _isUploading
+                        ? Colors.grey
+                        : null, // Grey out text when disabled
                   ),
                 ),
               ),
@@ -470,4 +483,3 @@ class _ChatInputFieldState extends State<ChatInputField> {
     );
   }
 }
-
