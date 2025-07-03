@@ -181,59 +181,59 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
           // ── Content Area ───────────────────────────────────────
           Expanded(
             child:
-                _isLoading
-                    ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(Color(0xFF3B3C3B)),
+            _isLoading
+                ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Color(0xFF3B3C3B)),
+              ),
+            )
+                : _filteredUsers.isEmpty
+                ? Center(
+              child:
+              _hasSearched
+                  ? LottieEmpty(
+                title:
+                'Member “${_searchController.text}” Not found!',
+              )
+                  : LottieEmpty(title: 'Please search for members'),
+            )
+                : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _filteredUsers.length,
+              itemBuilder: (context, index) {
+                final user = _filteredUsers[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: NetworkImage(user.senderAvatar),
+                  ),
+                  title: Text(user.fullName),
+                  onTap: () async {
+                    final currentUserId =
+                    await SharedPrefsService.getUserId();
+                    if (currentUserId == null) return;
+
+                    final threadId = await fetchThread(
+                      int.parse(currentUserId),
+                      int.parse(user.id),
+                    );
+
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) => BuddyBossThreadScreen(
+                          threadId: int.parse(threadId ?? '0'),
+                          userId: int.parse(user.id),
+                          profilePicture: user.senderAvatar,
+                          userName: user.fullName,
+                        ),
                       ),
-                    )
-                    : _filteredUsers.isEmpty
-                    ? Center(
-                      child:
-                          _hasSearched
-                              ? LottieEmpty(
-                                title:
-                                    'Member “${_searchController.text}” Not found!',
-                              )
-                              : LottieEmpty(title: 'Please search for members'),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.all(8),
-                      itemCount: _filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = _filteredUsers[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: NetworkImage(user.senderAvatar),
-                          ),
-                          title: Text(user.fullName),
-                          onTap: () async {
-                            final currentUserId =
-                                await SharedPrefsService.getUserId();
-                            if (currentUserId == null) return;
-
-                            final threadId = await fetchThread(
-                              int.parse(currentUserId),
-                              int.parse(user.id),
-                            );
-
-                            if (!mounted) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => BuddyBossThreadScreen(
-                                      threadId: int.parse(threadId ?? '0'),
-                                      userId: int.parse(user.id),
-                                      profilePicture: user.senderAvatar,
-                                      userName: user.fullName,
-                                    ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

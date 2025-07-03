@@ -41,15 +41,15 @@ class _ChatInputFieldState extends State<ChatInputField> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
@@ -112,7 +112,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
       if (sizeInMB > widget.maxFileSizeMB) {
         await _showErrorDialog(
           'Video too large (${sizeInMB.toStringAsFixed(1)}MB). '
-          'Maximum allowed: ${widget.maxFileSizeMB}MB',
+              'Maximum allowed: ${widget.maxFileSizeMB}MB',
         );
         return false;
       }
@@ -238,52 +238,52 @@ class _ChatInputFieldState extends State<ChatInputField> {
       context: context,
       builder:
           (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Photo Library'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('Take Photo'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _takePicture();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.video_library),
-                  title: const Text('Video Library'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickVideo();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.videocam),
-                  title: const Text('Record Video'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _recordVideo();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.attach_file),
-                  title: const Text('Other Files'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAnyFile();
-                  },
-                ),
-              ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photo Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
             ),
-          ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _takePicture();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library),
+              title: const Text('Video Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickVideo();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam),
+              title: const Text('Record Video'),
+              onTap: () {
+                Navigator.pop(context);
+                _recordVideo();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: const Text('Other Files'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAnyFile();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -297,17 +297,17 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
     return thumbnailPath != null
         ? Image.file(
-          File(thumbnailPath),
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-        )
+      File(thumbnailPath),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+    )
         : Container(
-          width: 100,
-          height: 100,
-          color: Colors.grey[200],
-          child: const Icon(Icons.videocam, size: 40),
-        );
+      width: 100,
+      height: 100,
+      color: Colors.grey[200],
+      child: const Icon(Icons.videocam, size: 40),
+    );
   }
 
   Widget _buildAttachmentPreview(File file, int index) {
@@ -446,16 +446,16 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     border: InputBorder.none,
                     hintStyle: TextStyle(
                       color:
-                          _isUploading
-                              ? Colors.grey
-                              : null, // Grey out hint when disabled
+                      _isUploading
+                          ? Colors.grey
+                          : null, // Grey out hint when disabled
                     ),
                   ),
                   style: TextStyle(
                     color:
-                        _isUploading
-                            ? Colors.grey
-                            : null, // Grey out text when disabled
+                    _isUploading
+                        ? Colors.grey
+                        : null, // Grey out text when disabled
                   ),
                 ),
               ),
@@ -470,4 +470,3 @@ class _ChatInputFieldState extends State<ChatInputField> {
     );
   }
 }
-
