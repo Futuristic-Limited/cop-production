@@ -16,20 +16,31 @@ class CustomBottomNavBar extends StatelessWidget {
       currentIndex: selectedIndex,
       onTap: (index) {
         onTap(index); // Call the parent's onTap handler
+
         switch (index) {
           case 0: // Home
             Navigator.pushNamedAndRemoveUntil(
               context,
               '/home',
-              (route) => false,
+                  (route) => false,
             );
             break;
+
           case 1: // Activity Feed
             Navigator.pushNamed(context, '/activity/feeds');
             break;
-          case 2: // Notifications
-            Navigator.pushNamed(context, '/notifications');
+
+          case 2: // Messages
+            Navigator.pushNamed(context, '/messages').then((_) {
+              // When user comes back from /messages, return to home
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                    (route) => false,
+              );
+            });
             break;
+
           case 3: // Communities
             Navigator.pushNamed(context, '/communities');
             break;
@@ -40,8 +51,8 @@ class CustomBottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feeds'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Notifications',
+          icon: Icon(Icons.message), // Changed from notifications to message
+          label: 'Messages',
         ),
         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Communities'),
       ],
