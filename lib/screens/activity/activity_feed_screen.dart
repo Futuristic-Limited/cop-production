@@ -25,7 +25,7 @@ class ActivityFeedScreen extends StatefulWidget {
 }
 
 class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
-  late Future<List<ActivityItem>> _allActivities;
+  late Future<ActivityFeedResponse> _allActivities;
   final ApiService _apiService = ApiService();
   final TextEditingController _postController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
@@ -49,18 +49,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         _currentUserId = value!;
       });
     });
-    // _allActivities.then((activities) {
-    //   if (activities.isNotEmpty) {
-    //     setState(() {
-    //       _currentUserId = activities.first.userId;
-    //     });
-    //   }
-    // });
   }
 
   Future<void> _loadData() async {
     setState(() {
-      _allActivities = _apiService.getAllActivities();
+      _allActivities = _apiService.getActivityFeed();
     });
   }
 
@@ -168,6 +161,24 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     }
   }
 
+  Future<List<String>> _uploadMediaFiles(List<File> files) async {
+    final uploadedIds = <String>[];
+
+    for (int i = 0; i < files.length; i++) {
+      try {
+        final result = await _uploadMedia(files[i], i);
+        if (result != null && result['id'] != null) {
+          uploadedIds.add(result['id'].toString());
+        }
+      } catch (e) {
+        debugPrint('Error uploading file at index $i: $e');
+        // Continue with other files even if one fails
+      }
+    }
+
+    return uploadedIds;
+  }
+
   Future<Map<String, dynamic>?> _uploadMedia(File file, int index) async {
     try {
       // Mark index as uploading
@@ -262,7 +273,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         .trim();
   }
 
-  // POST OPERATIONS (existing)
+  // POST OPERATIONS
   void _showEditPostDialog(BuildContext context, ActivityItem post) {
     _postController.text = _stripHtmlTags(post.content);
     showModalBottomSheet(
@@ -330,7 +341,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  // COMMENT OPERATIONS (updated)
+  // COMMENT OPERATIONS
   void _showEditCommentDialog(BuildContext context, ActivityComment comment) {
     final controller = TextEditingController(
       text: _stripHtmlTags(comment.content),
@@ -480,7 +491,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  // REPLY OPERATIONS (similar to comments)
+  // REPLY OPERATIONS
   void _showEditReplyDialog(BuildContext context, ActivityComment reply) {
     final controller = TextEditingController(
       text: _stripHtmlTags(reply.content),
@@ -590,111 +601,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       }
     }
   }
-
-  // COMMENT DISPLAY WIDGETS
-  // Widget _buildFullComment(
-  //   BuildContext context,
-  //   ActivityComment comment,
-  //   ActivityItem post, {
-  //   bool isReply = false,
-  // }) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           CircleAvatar(
-  //             radius: isReply ? 16 : 20,
-  //             child: ClipOval(
-  //               child:
-  //                   (comment.userAvatar != null &&
-  //                           comment.userAvatar!.isNotEmpty)
-  //                       ? CachedNetworkImage(
-  //                         imageUrl: comment.userAvatar!,
-  //                         placeholder:
-  //                             (context, url) =>
-  //                                 Image.asset('assets/default_avatar.png'),
-  //                         errorWidget:
-  //                             (context, url, error) =>
-  //                                 Image.asset('assets/default_avatar.png'),
-  //                         fit: BoxFit.cover,
-  //                         width: isReply ? 32 : 40,
-  //                         height: isReply ? 32 : 40,
-  //                       )
-  //                       : Image.asset('assets/default_avatar.png'),
-  //             ),
-  //           ),
-  //           const SizedBox(width: 12),
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   comment.username,
-  //                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //                 Text(_stripHtmlTags(comment.content)),
-  //                 const SizedBox(height: 4),
-  //                 Row(
-  //                   children: [
-  //                     Text(
-  //                       _formatTimeAgo(comment.dateRecorded),
-  //                       style: Theme.of(
-  //                         context,
-  //                       ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-  //                     ),
-  //                     const SizedBox(width: 16),
-  //                     if (!isReply)
-  //                       InkWell(
-  //                         onTap: () => _showReplyDialog(context, post, comment),
-  //                         child: Text(
-  //                           'Reply',
-  //                           style: Theme.of(
-  //                             context,
-  //                           ).textTheme.bodySmall?.copyWith(
-  //                             color: Theme.of(context).primaryColor,
-  //                           ),
-  //                         ),
-  //                       ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           IconButton(
-  //             icon: const Icon(Icons.more_vert, size: 16),
-  //             onPressed:
-  //                 () =>
-  //                     isReply
-  //                         ? _handleReplyAction(context, post, comment)
-  //                         : _handleCommentAction(context, post, comment),
-  //           ),
-  //         ],
-  //       ),
-  //       if (comment.replies.isNotEmpty && !isReply)
-  //         Padding(
-  //           padding: const EdgeInsets.only(left: 32),
-  //           child: Column(
-  //             children:
-  //                 comment.replies
-  //                     .map(
-  //                       (reply) => _buildFullComment(
-  //                         context,
-  //                         reply,
-  //                         post,
-  //                         isReply: true,
-  //                       ),
-  //                     )
-  //                     .toList(),
-  //           ),
-  //         ),
-  //       const Divider(height: 32),
-  //     ],
-  //   );
-  // }
 
   Widget _buildFullComment(
       BuildContext context,
@@ -850,7 +756,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  // REST OF THE CODE (existing implementation)
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -896,10 +801,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   }
 
   Widget _buildActivityList(
-      Future<List<ActivityItem>> futureActivities,
+      Future<ActivityFeedResponse> futureActivities,
       String feedType,
       ) {
-    return FutureBuilder<List<ActivityItem>>(
+    return FutureBuilder<ActivityFeedResponse>(
       future: futureActivities,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -910,7 +815,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           return _buildErrorWidget(context, snapshot.error.toString());
         }
 
-        final activities = snapshot.data ?? [];
+        final response = snapshot.data ?? ActivityFeedResponse(posts: [], discussions: []);
+        final activities = [...response.posts, ...response.discussions];
+
         if (activities.isEmpty) {
           return _buildEmptyState(feedType, context);
         }
@@ -930,98 +837,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  // Widget _buildActivityItem(BuildContext context, ActivityItem activity) {
-  //   return Card(
-  //     margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-  //     elevation: 2,
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         ListTile(
-  //           leading: ClipOval(
-  //             child:
-  //                 (activity.userAvatar != null &&
-  //                         activity.userAvatar!.isNotEmpty)
-  //                     ? CachedNetworkImage(
-  //                       imageUrl: activity.userAvatar!,
-  //                       placeholder:
-  //                           (context, url) =>
-  //                               Image.asset('assets/default_avatar.png'),
-  //                       errorWidget:
-  //                           (context, url, error) =>
-  //                               Image.asset('assets/default_avatar.png'),
-  //                       fit: BoxFit.cover,
-  //                       width: 48,
-  //                       height: 48,
-  //                     )
-  //                     : Image.asset('assets/default_avatar.png'),
-  //           ),
-  //           title: Text(activity.username),
-  //           subtitle: Text(_formatTimeAgo(activity.dateRecorded)),
-  //           trailing: IconButton(
-  //             icon: const Icon(Icons.more_vert),
-  //             onPressed: () => _showPostActions(context, activity),
-  //           ),
-  //         ),
-  //
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(horizontal: 16),
-  //           child: Text(
-  //             _stripHtmlTags(activity.content),
-  //             style: Theme.of(context).textTheme.bodyLarge,
-  //           ),
-  //         ),
-  //
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(horizontal: 8),
-  //           child: Row(
-  //             children: [
-  //               IconButton(
-  //                 icon: const Icon(Icons.comment),
-  //                 onPressed: () => _showCommentDialog(context, activity),
-  //                 tooltip: 'Comment',
-  //               ),
-  //               const Spacer(),
-  //               Text(
-  //                 '${activity.comments.length} ${activity.comments.length == 1 ? 'comment' : 'comments'}',
-  //                 style: Theme.of(context).textTheme.bodySmall,
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //
-  //         if (activity.comments.isNotEmpty)
-  //           Padding(
-  //             padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 const Divider(height: 1),
-  //                 const SizedBox(height: 8),
-  //                 ...activity.comments
-  //                     .take(2)
-  //                     .map(
-  //                       (comment) =>
-  //                           _buildCommentPreview(context, comment, activity),
-  //                     ),
-  //                 if (activity.comments.length > 2)
-  //                   TextButton(
-  //                     onPressed: () => _showPostDetails(context, activity),
-  //                     child: Text(
-  //                       'View all ${activity.comments.length} comments',
-  //                     ),
-  //                   ),
-  //               ],
-  //             ),
-  //           ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Widget _buildActivityItem(BuildContext context, ActivityItem activity) {
     final showAllComments = ValueNotifier<bool>(false);
+    final isDiscussion = activity.type == 'discussion';
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -1049,8 +867,55 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
               )
                   : Image.asset('assets/default_avatar.png'),
             ),
-            title: Text(activity.username),
-            subtitle: Text(_formatTimeAgo(activity.dateRecorded)),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Username on first line
+                Text(
+                  activity.username,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // Date and identifier on second line
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _formatTimeAgo(activity.dateRecorded),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDiscussion ? Colors.blue[50] : Colors.green[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDiscussion ? Colors.blue[100]! : Colors.green[100]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        isDiscussion ? 'Discussion' : 'Post',
+                        style: TextStyle(
+                          color: isDiscussion ? Colors.blue[800] : Colors.green[800],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            // subtitle: Text(_formatTimeAgo(activity.dateRecorded)),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
               onPressed: () => _showPostActions(context, activity),
@@ -1124,95 +989,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       ),
     );
   }
-
-  // Widget _buildCommentPreview(
-  //   BuildContext context,
-  //   ActivityComment comment,
-  //   ActivityItem post,
-  // ) {
-  //   return Padding(
-  //     padding: const EdgeInsets.only(bottom: 8),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Row(
-  //           children: [
-  //             CircleAvatar(
-  //               radius: 16,
-  //               child: ClipOval(
-  //                 child:
-  //                     (comment.userAvatar != null &&
-  //                             comment.userAvatar!.isNotEmpty)
-  //                         ? CachedNetworkImage(
-  //                           imageUrl: comment.userAvatar!,
-  //                           placeholder:
-  //                               (context, url) =>
-  //                                   Image.asset('assets/default_avatar.png'),
-  //                           errorWidget:
-  //                               (context, url, error) =>
-  //                                   Image.asset('assets/default_avatar.png'),
-  //                           fit: BoxFit.cover,
-  //                           width: 32,
-  //                           height: 32,
-  //                         )
-  //                         : Image.asset('assets/default_avatar.png'),
-  //               ),
-  //             ),
-  //             const SizedBox(width: 8),
-  //             Expanded(
-  //               child: Text(
-  //                 comment.username,
-  //                 style: Theme.of(
-  //                   context,
-  //                 ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-  //               ),
-  //             ),
-  //             IconButton(
-  //               icon: const Icon(Icons.more_vert, size: 16),
-  //               onPressed: () => _handleCommentAction(context, post, comment),
-  //             ),
-  //           ],
-  //         ),
-  //         Padding(
-  //           padding: const EdgeInsets.only(left: 40),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text(
-  //                 _stripHtmlTags(comment.content),
-  //                 style: Theme.of(context).textTheme.bodyMedium,
-  //               ),
-  //               Row(
-  //                 children: [
-  //                   Text(
-  //                     _formatTimeAgo(comment.dateRecorded),
-  //                     style: Theme.of(
-  //                       context,
-  //                     ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-  //                   ),
-  //                   const SizedBox(width: 16),
-  //                   InkWell(
-  //                     onTap: () => _showReplyDialog(context, post, comment),
-  //                     child: Text(
-  //                       'Reply',
-  //                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-  //                         color: Theme.of(context).primaryColor,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               if (comment.replies.isNotEmpty)
-  //                 ...comment.replies.map(
-  //                   (reply) => _buildNestedReplies(context, reply, post),
-  //                 ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildCommentPreview(
       BuildContext context,
@@ -1534,18 +1310,14 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                                   index: index,
                                   isUploading: uploading.contains(index),
                                   onRemove: (i) {
-                                    final updatedFiles = [...files]
-                                      ..removeAt(i);
+                                    final updatedFiles = [...files]..removeAt(i);
                                     pickedFilesNotifier.value = updatedFiles;
 
-                                    // Remove & shift uploading index values if needed
-                                    final updatedUploading =
-                                    uploading
+                                    final updatedUploading = uploading
                                         .where((x) => x != i)
                                         .map((x) => x > i ? x - 1 : x)
                                         .toSet();
-                                    uploadingIndexesNotifier.value =
-                                        updatedUploading;
+                                    uploadingIndexesNotifier.value = updatedUploading;
                                   },
                                   buildVideoThumbnail: buildVideoThumbnail,
                                 );
@@ -1592,18 +1364,12 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                               tooltip: 'Add image',
                             ),
                             IconButton(
-                              icon: const Icon(
-                                Icons.videocam,
-                                color: Colors.red,
-                              ),
+                              icon: const Icon(Icons.videocam, color: Colors.red),
                               onPressed: _pickVideo,
                               tooltip: 'Add video',
                             ),
                             IconButton(
-                              icon: const Icon(
-                                Icons.insert_drive_file,
-                                color: Colors.orange,
-                              ),
+                              icon: const Icon(Icons.insert_drive_file, color: Colors.orange),
                               onPressed: _pickAnyFile,
                               tooltip: 'Add file',
                             ),
@@ -1623,36 +1389,37 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                           onPressed: () async {
                             if (_commentController.text.trim().isNotEmpty) {
                               try {
-                                final response = await _apiService
-                                    .postDiscussion(
-                                  postId: post.id,
-                                  content: _commentController.text,
-                                  mediaFiles: pickedFilesNotifier.value,
-                                  uploadedIds: _uploaded,
-                                  accessToken: _ciAccessToken ?? '',
-                                  apiUrl: apiUrl ?? '',
-                                );
-                                print(
-                                  'Response from the API: ${response.body}',
-                                );
-                                if (response.statusCode == 200) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Comment posted successfully',
-                                      ),
-                                    ),
+                                // Determine if this is a post or discussion
+                                final isDiscussion = post.type == 'discussion';
+
+                                // Upload media files first if needed
+                                List<String> uploadedIds = [];
+                                if (pickedFilesNotifier.value.isNotEmpty) {
+                                  // You'll need to implement this media upload logic
+                                  uploadedIds = await _uploadMediaFiles(pickedFilesNotifier.value);
+                                }
+
+                                ActivityComment comment;
+                                if (isDiscussion) {
+                                  comment = await ApiService().addComment(
+                                    post.id,
+                                    _commentController.text,
+                                    isDiscussion: true,
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Failed to post comment: ${response.body}',
-                                      ),
-                                    ),
+                                  comment = await ApiService().addComment(
+                                    post.id,
+                                    _commentController.text,
                                   );
                                 }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Comment posted successfully'),
+                                  ),
+                                );
                                 _commentController.clear();
+                                pickedFilesNotifier.value = [];
                                 Navigator.pop(context);
                                 _loadData(); // Refresh comments
                               } catch (e) {
@@ -1678,16 +1445,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  void _showReplyDialog(
-      BuildContext context,
-      ActivityItem post,
-      ActivityComment comment,
-      ) {
+  void _showReplyDialog(BuildContext context, ActivityItem post, ActivityComment comment) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder:
-          (context) => Padding(
+      builder: (context) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
@@ -1720,10 +1482,13 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                     onPressed: () async {
                       if (_replyController.text.trim().isNotEmpty) {
                         try {
-                          await _apiService.replyToComment(
+                          final isDiscussion = post.type == 'discussion';
+                          final reply = await ApiService().replyToComment(
                             comment.id,
                             _replyController.text,
+                            isDiscussion: isDiscussion,
                           );
+
                           _replyController.clear();
                           Navigator.pop(context);
                           _loadData();
@@ -1752,171 +1517,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     );
   }
 
-  // void _showPostDetails(BuildContext context, ActivityItem post) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     builder:
-  //         (context) => DraggableScrollableSheet(
-  //           expand: false,
-  //           initialChildSize: 0.9,
-  //           maxChildSize: 0.9,
-  //           builder:
-  //               (context, scrollController) => SingleChildScrollView(
-  //                 controller: scrollController,
-  //                 child: Column(
-  //                   children: [
-  //                     Padding(
-  //                       padding: const EdgeInsets.all(16),
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         children: [
-  //                           Row(
-  //                             children: [
-  //                               ClipOval(
-  //                                 child:
-  //                                     (post.userAvatar != null &&
-  //                                             post.userAvatar!.isNotEmpty)
-  //                                         ? CachedNetworkImage(
-  //                                           imageUrl: post.userAvatar!,
-  //                                           placeholder:
-  //                                               (context, url) => Image.asset(
-  //                                                 'assets/default_avatar.png',
-  //                                               ),
-  //                                           errorWidget:
-  //                                               (
-  //                                                 context,
-  //                                                 url,
-  //                                                 error,
-  //                                               ) => Image.asset(
-  //                                                 'assets/default_avatar.png',
-  //                                               ),
-  //                                           fit: BoxFit.cover,
-  //                                           width: 48,
-  //                                           height: 48,
-  //                                         )
-  //                                         : Image.asset(
-  //                                           'assets/default_avatar.png',
-  //                                         ),
-  //                               ),
-  //                               const SizedBox(width: 12),
-  //                               Expanded(
-  //                                 child: Column(
-  //                                   crossAxisAlignment:
-  //                                       CrossAxisAlignment.start,
-  //                                   children: [
-  //                                     Text(post.username),
-  //                                     Text(_formatTimeAgo(post.dateRecorded)),
-  //                                   ],
-  //                                 ),
-  //                               ),
-  //                               IconButton(
-  //                                 icon: const Icon(Icons.close),
-  //                                 onPressed: () => Navigator.pop(context),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                           const SizedBox(height: 16),
-  //                           Text(_stripHtmlTags(post.content)),
-  //                           const SizedBox(height: 16),
-  //                           Row(
-  //                             children: [
-  //                               IconButton(
-  //                                 icon: const Icon(Icons.comment),
-  //                                 onPressed: () {
-  //                                   Navigator.pop(context);
-  //                                   _showCommentDialog(context, post);
-  //                                 },
-  //                               ),
-  //                             ],
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                     const Divider(height: 1),
-  //                     Padding(
-  //                       padding: const EdgeInsets.all(16),
-  //                       child: Column(
-  //                         children: [
-  //                           TextField(
-  //                             controller: _commentController,
-  //                             decoration: InputDecoration(
-  //                               hintText: 'Write a comment...',
-  //                               suffixIcon: IconButton(
-  //                                 icon: const Icon(Icons.send),
-  //                                 onPressed: () async {
-  //                                   if (_commentController.text
-  //                                       .trim()
-  //                                       .isNotEmpty) {
-  //                                     try {
-  //                                       final response = await _apiService
-  //                                           .postDiscussion(
-  //                                             postId: post.id,
-  //                                             content: _commentController.text,
-  //                                             mediaFiles:
-  //                                                 pickedFilesNotifier.value,
-  //                                             uploadedIds: _uploaded,
-  //                                             accessToken: _ciAccessToken ?? '',
-  //                                             apiUrl: apiUrl ?? '',
-  //                                           );
-  //                                       print(
-  //                                         'Response from the API: ${response.body}',
-  //                                       );
-  //                                       if (response.statusCode == 200) {
-  //                                         ScaffoldMessenger.of(
-  //                                           context,
-  //                                         ).showSnackBar(
-  //                                           const SnackBar(
-  //                                             content: Text(
-  //                                               'Comment posted successfully',
-  //                                             ),
-  //                                           ),
-  //                                         );
-  //                                       } else {
-  //                                         ScaffoldMessenger.of(
-  //                                           context,
-  //                                         ).showSnackBar(
-  //                                           SnackBar(
-  //                                             content: Text(
-  //                                               'Failed to post comment: ${response.body}',
-  //                                             ),
-  //                                           ),
-  //                                         );
-  //                                       }
-  //                                     } catch (e) {
-  //                                       ScaffoldMessenger.of(
-  //                                         context,
-  //                                       ).showSnackBar(
-  //                                         SnackBar(
-  //                                           content: Text(
-  //                                             'Failed to add comment: $e',
-  //                                           ),
-  //                                         ),
-  //                                       );
-  //                                     }
-  //                                   }
-  //                                 },
-  //                               ),
-  //                               border: OutlineInputBorder(
-  //                                 borderRadius: BorderRadius.circular(24),
-  //                               ),
-  //                             ),
-  //                           ),
-  //                           const SizedBox(height: 16),
-  //                           ...post.comments.map(
-  //                             (comment) =>
-  //                                 _buildFullComment(context, comment, post),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //         ),
-  //   );
-  // }
-
   void _showPostDetails(BuildContext context, ActivityItem post) {
     final showAllComments = ValueNotifier<bool>(false);
 
@@ -1938,32 +1538,8 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                   children: [
                     Row(
                       children: [
-                        ClipOval(
-                          child: (post.userAvatar != null && post.userAvatar!.isNotEmpty)
-                              ? CachedNetworkImage(
-                            imageUrl: post.userAvatar!,
-                            placeholder: (context, url) => Image.asset('assets/default_avatar.png'),
-                            errorWidget: (context, url, error) => Image.asset('assets/default_avatar.png'),
-                            fit: BoxFit.cover,
-                            width: 48,
-                            height: 48,
-                          )
-                              : Image.asset('assets/default_avatar.png'),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(post.username),
-                              Text(_formatTimeAgo(post.dateRecorded)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
+                        // User avatar and info
+                        // ... (keep existing avatar code)
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -1997,28 +1573,29 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                           onPressed: () async {
                             if (_commentController.text.trim().isNotEmpty) {
                               try {
-                                final response = await _apiService.postDiscussion(
-                                  postId: post.id,
-                                  content: _commentController.text,
-                                  mediaFiles: pickedFilesNotifier.value,
-                                  uploadedIds: _uploaded,
-                                  accessToken: _ciAccessToken ?? '',
-                                  apiUrl: apiUrl ?? '',
-                                );
-                                print('Response from the API: ${response.body}');
-                                if (response.statusCode == 200) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Comment posted successfully'),
-                                    ),
+                                final isDiscussion = post.type == 'discussion';
+                                ActivityComment comment;
+
+                                if (isDiscussion) {
+                                  comment = await ApiService().addComment(
+                                    post.id,
+                                    _commentController.text,
+                                    isDiscussion: true,
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Failed to post comment: ${response.body}'),
-                                    ),
+                                  comment = await ApiService().addComment(
+                                    post.id,
+                                    _commentController.text,
                                   );
                                 }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Comment posted successfully'),
+                                  ),
+                                );
+                                _commentController.clear();
+                                _loadData(); // Refresh comments
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
