@@ -22,6 +22,10 @@ class _EventsScreenState extends State<EventsScreen> {
   String searchQuery = '';
   Timer? _searchTimer;
 
+  // For swipe navigation
+  final PageController _pageController = PageController();
+  final List<String> _tabTitles = ['All Events', 'Upcoming', 'Past'];
+
   @override
   void initState() {
     super.initState();
@@ -31,6 +35,7 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   void dispose() {
     _searchTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -123,69 +128,89 @@ class _EventsScreenState extends State<EventsScreen> {
             onPressed: loadEvents,
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48.0),
+          child: Column(
+            children: [
+              // Custom tab indicator
+              Container(
+                height: 48.0,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (int i = 0; i < _tabTitles.length; i++)
+                      GestureDetector(
+                        onTap: () {
+                          _pageController.animateToPage(
+                            i,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0,
+                            vertical: 8.0,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: selectedTabIndex == i
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.transparent,
+                                width: 2.0,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            _tabTitles[i],
+                            style: TextStyle(
+                              color: selectedTabIndex == i
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            selectedTabIndex = index;
+          });
+        },
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ToggleButtons(
-              isSelected: [
-                selectedTabIndex == 0,
-                selectedTabIndex == 1,
-                selectedTabIndex == 2,
-              ],
-              onPressed: (index) {
-                setState(() {
-                  selectedTabIndex = index;
-                });
-              },
-              borderRadius: BorderRadius.circular(8),
-              selectedColor: Colors.white,
-              fillColor: Colors.green,
-              color: Colors.black,
-              children: const [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text("All Events"),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text("Upcoming"),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text("Past"),
-                ),
-              ],
-            ),
+          // All Events
+          _buildEventList(events,
+              searchQuery.isNotEmpty
+                  ? 'No results for "$searchQuery"'
+                  : 'No events found'
           ),
-          Expanded(
-            child: _buildEventList(),
-          ),
+          // Upcoming Events
+          _buildEventList(upcomingEvents, 'No upcoming events'),
+          // Past Events
+          _buildEventList(pastEvents, 'No past events'),
         ],
       ),
     );
   }
 
-  Widget _buildEventList() {
-    final eventList = selectedTabIndex == 0
-        ? events
-        : selectedTabIndex == 1
-        ? upcomingEvents
-        : pastEvents;
-
+  Widget _buildEventList(List<Event> eventList, String emptyMessage) {
     if (eventList.isEmpty) {
       return Center(
         child: Text(
-          selectedTabIndex == 0
-              ? searchQuery.isNotEmpty
-              ? 'No results for "$searchQuery"'
-              : 'No events found'
-              : selectedTabIndex == 1
-              ? 'No upcoming events'
-              : 'No past events',
+          emptyMessage,
           style: const TextStyle(fontSize: 18),
         ),
       );
@@ -200,7 +225,6 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  // API METHODS (same as before)
   Future<List<Event>> fetchAllEvents() async {
     final apiUrl = dotenv.env['API_URL'];
     final response = await http.get(
@@ -258,7 +282,6 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 }
 
-// Event Card Widget (now defined as a private widget within the same file)
 class _EventCard extends StatelessWidget {
   final Event event;
 
@@ -381,7 +404,6 @@ class _EventCard extends StatelessWidget {
   }
 }
 
-// Event Detail Screen (now defined as a private widget within the same file)
 class _EventDetailScreen extends StatelessWidget {
   final Event event;
 
@@ -550,12 +572,11 @@ class EventSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildResults(BuildContext context) {
     onSearch(query);
-    // Automatically close search after initiating the search
     Future.microtask(() {
       close(context, query);
     });
 
-    return const SizedBox(); // Placeholder while search closes
+    return const SizedBox();
   }
 
   @override

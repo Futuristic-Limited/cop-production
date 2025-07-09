@@ -1,3 +1,34 @@
+class ActivityFeedResponse {
+  final List<ActivityItem> posts;
+  final List<ActivityItem> discussions;
+
+  ActivityFeedResponse({
+    List<ActivityItem>? posts,
+    List<ActivityItem>? discussions,
+  })  : posts = posts ?? [],
+        discussions = discussions ?? [];
+
+  factory ActivityFeedResponse.fromJson(Map<String, dynamic> json) {
+    try {
+      return ActivityFeedResponse(
+        posts: (json['posts'] as List<dynamic>?)
+            ?.map((item) => ActivityItem.fromJson(item))
+            .toList(),
+        discussions: (json['discussions'] as List<dynamic>?)
+            ?.map((item) => ActivityItem.fromJson(item))
+            .toList(),
+      );
+    } catch (e) {
+      return ActivityFeedResponse();
+    }
+  }
+
+  List<ActivityItem> getAllItems() {
+    return [...posts, ...discussions]..sort((a, b) =>
+        b.dateRecorded.compareTo(a.dateRecorded));
+  }
+}
+
 class ActivityItem {
   final String id;
   final String userId;
@@ -7,7 +38,7 @@ class ActivityItem {
   final String content;
   final String primaryLink;
   final String itemId;
-  final String secondaryItemId;
+  final String? secondaryItemId;
   final DateTime dateRecorded;
   final bool hideSitewide;
   final int mpttLeft;
@@ -17,6 +48,7 @@ class ActivityItem {
   final String status;
   final ActivityUser? user;
   final List<ActivityComment> comments;
+  final List<ActivityMedia> media;
   final String? groupId;
 
   ActivityItem({
@@ -28,7 +60,7 @@ class ActivityItem {
     required this.content,
     required this.primaryLink,
     required this.itemId,
-    required this.secondaryItemId,
+    this.secondaryItemId,
     required this.dateRecorded,
     this.hideSitewide = false,
     this.mpttLeft = 0,
@@ -38,8 +70,56 @@ class ActivityItem {
     this.status = 'published',
     this.user,
     this.comments = const [],
+    this.media = const [],
     this.groupId,
   });
+
+  // NEW: copyWith method added here
+  ActivityItem copyWith({
+    String? id,
+    String? userId,
+    String? component,
+    String? type,
+    String? action,
+    String? content,
+    String? primaryLink,
+    String? itemId,
+    String? secondaryItemId,
+    DateTime? dateRecorded,
+    bool? hideSitewide,
+    int? mpttLeft,
+    int? mpttRight,
+    bool? isSpam,
+    String? privacy,
+    String? status,
+    ActivityUser? user,
+    List<ActivityComment>? comments,
+    List<ActivityMedia>? media,
+    String? groupId,
+  }) {
+    return ActivityItem(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      component: component ?? this.component,
+      type: type ?? this.type,
+      action: action ?? this.action,
+      content: content ?? this.content,
+      primaryLink: primaryLink ?? this.primaryLink,
+      itemId: itemId ?? this.itemId,
+      secondaryItemId: secondaryItemId ?? this.secondaryItemId,
+      dateRecorded: dateRecorded ?? this.dateRecorded,
+      hideSitewide: hideSitewide ?? this.hideSitewide,
+      mpttLeft: mpttLeft ?? this.mpttLeft,
+      mpttRight: mpttRight ?? this.mpttRight,
+      isSpam: isSpam ?? this.isSpam,
+      privacy: privacy ?? this.privacy,
+      status: status ?? this.status,
+      user: user ?? this.user,
+      comments: comments ?? this.comments,
+      media: media ?? this.media,
+      groupId: groupId ?? this.groupId,
+    );
+  }
 
   factory ActivityItem.fromJson(Map<String, dynamic> json) {
     // Filter out sensitive user data
@@ -53,6 +133,10 @@ class ActivityItem {
     final commentsJson = json['comments'] as List<dynamic>? ?? [];
     final comments = commentsJson.map((commentJson) => ActivityComment.fromJson(commentJson)).toList();
 
+    // Parse media
+    final mediaJson = json['media'] as List<dynamic>? ?? [];
+    final media = mediaJson.map((mediaJson) => ActivityMedia.fromJson(mediaJson)).toList();
+
     return ActivityItem(
       id: json['id']?.toString() ?? '0',
       userId: json['user_id']?.toString() ?? '0',
@@ -62,7 +146,7 @@ class ActivityItem {
       content: json['content']?.toString() ?? '',
       primaryLink: json['primary_link']?.toString() ?? '',
       itemId: json['item_id']?.toString() ?? '0',
-      secondaryItemId: json['secondary_item_id']?.toString() ?? '0',
+      secondaryItemId: json['secondary_item_id']?.toString(),
       dateRecorded: DateTime.tryParse(json['date_recorded']?.toString() ?? '') ?? DateTime.now(),
       hideSitewide: json['hide_sitewide']?.toString() == '1',
       mpttLeft: int.tryParse(json['mptt_left']?.toString() ?? '0') ?? 0,
@@ -72,10 +156,12 @@ class ActivityItem {
       status: json['status']?.toString() ?? 'published',
       user: userJson != null ? ActivityUser.fromJson(userJson) : null,
       comments: comments,
-      groupId: json['group_id']?.toString(),  // Add this line
+      media: media,
+      groupId: json['group_id']?.toString(),
     );
   }
 
+  bool get isDiscussion => type == 'bbp_topic_create';
   String get username => user?.displayName ?? 'User $userId';
   String? get userAvatar => user?.avatarUrl;
 }
@@ -193,5 +279,23 @@ class ActivityUser {
     );
   }
 }
+
+class ActivityMedia {
+  final String url;
+  final String type;
+
+  ActivityMedia({
+    required this.url,
+    required this.type,
+  });
+
+  factory ActivityMedia.fromJson(Map<String, dynamic> json) {
+    return ActivityMedia(
+      url: json['url']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'file',
+    );
+  }
+}
+
 
 
