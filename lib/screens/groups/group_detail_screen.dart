@@ -45,7 +45,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         onTabSelected: _switchTab,
       ),
       appBar: AppBar(
-        title: const Text('Group Detail View'),
+        title: const Text('Community Detail View'),
       ),
       body: TabBarView(
         controller: _tabController,

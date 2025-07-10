@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'dart:convert';
 import 'package:APHRC_COP/screens/messages/lottie.dart';
@@ -7,13 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import '../../models/group_documents_model.dart';
+import '../../services/shared_prefs_service.dart';
 import '../../services/token_preference.dart';
 import '../../utils/constants.dart';
 import '../../utils/download.dart';
 import '../../utils/helper_functions.dart';
 import '../../utils/show_error_dialog.dart';
+import '../../services/community_service.dart';
 
 final buddyBossApiUrl = dotenv.env['WP_API_URL'];
 
@@ -22,17 +24,18 @@ class GroupDocuments extends StatefulWidget {
   final int groupId;
 
   @override
-  State<GroupDocuments> createState() => _GroupPhotosState();
+  State<GroupDocuments> createState() => _GroupDocumentsState();
 }
 
-class _GroupPhotosState extends State<GroupDocuments> {
+class _GroupDocumentsState extends State<GroupDocuments> {
   String? _accessToken;
+  bool? _isGroupMember;
   bool _isLoading = false;
   bool _isLoadingUpload = false;
-  bool _isLoadingSaveImage = false;
-  List<GroupActivityDocument> activities = [];
+  bool _isLoadingSaveFile = false;
+  List<GroupDocument> documents = []; // Changed to use GroupDocument
   String? errorMessage;
-  File? _selectedImage;
+  File? _selectedFile;
   String? _uploaded;
   final TextEditingController _descriptionController = TextEditingController();
   final ValueNotifier<bool> _uploadNotifier = ValueNotifier(false);
@@ -55,6 +58,31 @@ class _GroupPhotosState extends State<GroupDocuments> {
 
   Future<void> _init() async {
     await _fetchGroupDocuments(widget.groupId);
+    await _getUserId();
+  }
+
+  Future<void> _getUserId() async {
+    if (!mounted) return;
+
+    try {
+      final userId = await SharedPrefsService.getUserId();
+      final token = await SharedPrefsService.getAccessToken();
+      CommunityService Community = new CommunityService();
+      final isMember = await Community.checkUserGroupMembership(token!, userId!, widget.groupId
+          );
+      if (mounted) {
+        setState(() {
+          _isGroupMember = isMember;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => 'Failed to check membership: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+      }
+    }
   }
 
   MediaType _getContentType(String filePath) {
@@ -77,7 +105,7 @@ class _GroupPhotosState extends State<GroupDocuments> {
       }
 
       final response = await http.get(
-        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/activity?component=groups&primary_id=$groupId&type=activity_update'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/document?group_id=$groupId'),
         headers: {
           'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
@@ -87,14 +115,13 @@ class _GroupPhotosState extends State<GroupDocuments> {
       if (mounted) {
         if (response.statusCode == 200) {
           final List<dynamic> jsonData = jsonDecode(response.body);
-
           setState(() {
-            activities = jsonData.map((item) => GroupActivityDocument.fromJson(item)).toList();
+            documents = jsonData.map((item) => GroupDocument.fromJson(item)).toList();
             _isLoading = false;
           });
         } else {
           setState(() {
-            errorMessage = 'Failed to load activities: ${response.statusCode}';
+            errorMessage = 'Failed to load documents: ${response.statusCode}';
             _isLoading = false;
           });
         }
@@ -127,7 +154,7 @@ class _GroupPhotosState extends State<GroupDocuments> {
   }
 
   Future<Map<String, dynamic>?> _uploadDocument() async {
-    if (_selectedImage == null || _accessToken == null) return null;
+    if (_selectedFile == null || _accessToken == null) return null;
 
     _uploadNotifier.value = true;
     if (mounted) setState(() => _isLoadingUpload = true);
@@ -135,16 +162,16 @@ class _GroupPhotosState extends State<GroupDocuments> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$buddyBossApiUrl/wp-json/wp/v2/media'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/document/upload'),
       );
 
       request.headers['Authorization'] = 'Bearer $_accessToken';
-      final contentType = _getContentType(_selectedImage!.path);
+      final contentType = _getContentType(_selectedFile!.path);
 
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
-          _selectedImage!.path,
+          _selectedFile!.path,
           contentType: contentType,
         ),
       );
@@ -176,10 +203,10 @@ class _GroupPhotosState extends State<GroupDocuments> {
       'group_id': widget.groupId,
       'privacy': "public",
     };
-    _saveNotifier.value = true; // Start loading
+    _saveNotifier.value = true;
     if (mounted) {
       setState(() {
-        _isLoadingSaveImage = true;
+        _isLoadingSaveFile = true;
       });
     }
 
@@ -194,20 +221,18 @@ class _GroupPhotosState extends State<GroupDocuments> {
       );
 
       if (mounted) {
-        print('Response from the API create the document, ${response.body}');
         if (response.statusCode == 200) {
-          print('Response from the API, ${response.body}');
           await _fetchGroupDocuments(widget.groupId);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Photo uploaded successfully'),
+            const SnackBar(
+              content: Text('Document uploaded successfully'),
               backgroundColor: Colors.green,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Unexpected error occurred'),
               backgroundColor: Colors.red,
             ),
@@ -221,15 +246,16 @@ class _GroupPhotosState extends State<GroupDocuments> {
           backgroundColor: Colors.red,
         ),
       );
-    }finally {
-      _saveNotifier.value = false; // Stop loading
-      if (mounted) setState(() {
-        _isLoadingSaveImage = false;
-        _selectedImage = null;
-        _uploaded = null;
-        _descriptionController.clear();
-      });
-      // Navigator.pop(context); // Close the bottom sheet
+    } finally {
+      _saveNotifier.value = false;
+      if (mounted) {
+        setState(() {
+          _isLoadingSaveFile = false;
+          _selectedFile = null;
+          _uploaded = null;
+          _descriptionController.clear();
+        });
+      }
     }
   }
 
@@ -262,17 +288,17 @@ class _GroupPhotosState extends State<GroupDocuments> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-            
-                  if (_selectedImage != null) ...[
+
+                  if (_selectedFile != null) ...[
                     const SizedBox(height: 16),
                     ListTile(
                       leading: Icon(
-                        getDocumentIcon(_selectedImage!.path.split('.').last),
+                        getDocumentIcon(_selectedFile!.path.split('.').last),
                         size: 36,
-                        color: getDocumentColor(_selectedImage!.path.split('.').last),
+                        color: getDocumentColor(_selectedFile!.path.split('.').last),
                       ),
                       title: Text(
-                        _selectedImage!.path.split('/').last,
+                        _selectedFile!.path.split('/').last,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -280,17 +306,17 @@ class _GroupPhotosState extends State<GroupDocuments> {
                       trailing: IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () {
-                          setState(() => _selectedImage = null);
+                          setState(() => _selectedFile = null);
                           Navigator.pop(context);
                         },
                       ),
                     ),
                     const SizedBox(height: 16),
                   ],
-            
+
                   Text(uploadDocumentText),
                   const SizedBox(height: 8),
-            
+
                   TextField(
                     controller: _descriptionController,
                     cursorColor: AppColors.aphrcGreen,
@@ -308,8 +334,8 @@ class _GroupPhotosState extends State<GroupDocuments> {
                     maxLines: 1,
                   ),
                   const SizedBox(height: 16),
-            
-                  if (_selectedImage == null) ...[
+
+                  if (_selectedFile == null) ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -327,8 +353,8 @@ class _GroupPhotosState extends State<GroupDocuments> {
                       ),
                     ),
                   ],
-            
-                  if (_selectedImage != null) ...[
+
+                  if (_selectedFile != null) ...[
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
@@ -380,7 +406,7 @@ class _GroupPhotosState extends State<GroupDocuments> {
       if (result != null && result.files.single.path != null) {
         if (mounted) Navigator.pop(context);
         setState(() {
-          _selectedImage = File(result.files.single.path!);
+          _selectedFile = File(result.files.single.path!);
           _uploaded = null;
         });
         await Future.delayed(const Duration(milliseconds: 50));
@@ -400,163 +426,241 @@ class _GroupPhotosState extends State<GroupDocuments> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Group Documents'),
+        title: const Text('Community Documents'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : activities.every((a) => a.documents.isEmpty)
-          ? LottieEmpty(title: 'Upload documents')
-          : _buildDocumentList(),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : documents.isEmpty
+              ? LottieEmpty(title: 'Upload documents')
+              : _buildDocumentList(),
+          // "Not a member" message overlay
+          if (_isGroupMember == false)
+            Positioned(
+              bottom: 70, // Position above FAB
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.orange[100]?.withOpacity(0.9),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.group_off, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Only community members can upload',
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showDocumentUploadBottomSheet(context),
-        backgroundColor: AppColors.aphrcGreen,
+        onPressed: _isGroupMember == true
+            ? () => _showDocumentUploadBottomSheet(context)
+            : null,
+        backgroundColor: _isGroupMember == true
+            ? AppColors.aphrcGreen
+            : Colors.grey[400],
         foregroundColor: Colors.white,
+        tooltip: _isGroupMember == true
+            ? 'Upload document'
+            : 'Join group to upload',
         child: const Icon(Icons.add_outlined),
       ),
     );
   }
 
   Widget _buildDocumentList() {
-    final allDocuments = activities
-        .expand((activity) => activity.documents)
-        .toList();
+    // Get group name (assuming documents has at least one item)
+    final groupName = documents.isNotEmpty ? documents.first.groupName : 'community';
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: allDocuments.length,
-      itemBuilder: (context, index) {
-        final document = allDocuments[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
+    return Column(
+      children: [
+        // Group name badge (consistent with photos/videos)
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.aphrcGreen),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            leading: Icon(
-              getDocumentIcon(document.extension),
-              size: 36,
-              color: getDocumentColor(document.extension),
+            color: AppColors.aphrcGreen.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.aphrcGreen,
+              width: 1.5,
             ),
-            title: Text(
-              document.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.aphrcGreen,
-                fontSize: 14,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.group, size: 16, color: AppColors.aphrcGreen),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$groupName documents',
+                  style: TextStyle(
+                    color: AppColors.aphrcGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Row(
-              children: [
-                Text(
-                  document.userLogin,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  formatDate(document.date),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 8), // spacing between date and size
-                Text(
-                  document.size, // assuming size is like "2 MB" or "150 KB"
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-
-
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, size: 20),
-              onSelected: (value) async {
-                switch (value) {
-                  case 'download':
-                    try {
-                      await downloadAndOpenFile(
-                        url: document.url,
-                        fileName: document.title,
-                        token: _accessToken ?? '',
-                        context: context, // Make sure you have access to BuildContext here
-                      );
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to download: ${e.toString()}')),
-                        );
-                      }
-                    }
-                    break;
-                  case 'copy_url':
-                  // Implement copy URL functionality
-                    break;
-                  case 'rename':
-                  // Implement rename functionality
-                    break;
-                  case 'delete':
-                  // Implement delete functionality
-                    break;
-                }
-              },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'download',
-                  child: Row(
-                    children: [
-                      Icon(Icons.download, size: 20),
-                      SizedBox(width: 8),
-                      Text('Download'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'copy_url',
-                  child: Row(
-                    children: [
-                      Icon(Icons.link, size: 20),
-                      SizedBox(width: 8),
-                      Text('Copy URL'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'rename',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 8),
-                      Text('Rename'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 20, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
-        );
-      },
+        ),
+        // Document list (unchanged except for being wrapped in Expanded)
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: documents.length,
+            itemBuilder: (context, index) {
+              final doc = documents[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.aphrcGreen),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  leading: Icon(
+                    getDocumentIcon(doc.document.extension),
+                    size: 36,
+                    color: getDocumentColor(doc.document.extension),
+                  ),
+                  title: Text(
+                    doc.document.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.aphrcGreen,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doc.userLogin,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            doc.document.size,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            doc.document.extensionDescription,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (value) async {
+                      switch (value) {
+                        case 'download':
+                          try {
+                            await downloadAndOpenFile(
+                              url: doc.document.downloadUrl,
+                              fileName: doc.document.filename,
+                              token: _accessToken ?? '',
+                              context: context,
+                            );
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to download: ${e.toString()}')),
+                              );
+                            }
+                          }
+                          break;
+                        case 'copy_url':
+                        // Implement copy URL functionality
+                          break;
+                        case 'rename':
+                        // Implement rename functionality
+                          break;
+                        case 'delete':
+                        // Implement delete functionality
+                          break;
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      const PopupMenuItem<String>(
+                        value: 'download',
+                        child: Row(
+                          children: [
+                            Icon(Icons.download, size: 20),
+                            SizedBox(width: 8),
+                            Text('Download'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'copy_url',
+                        child: Row(
+                          children: [
+                            Icon(Icons.link, size: 20),
+                            SizedBox(width: 8),
+                            Text('Copy URL'),
+                          ],
+                        ),
+                      ),
+                      if (doc.document.userPermissions?['rename'] == 1)
+                        const PopupMenuItem<String>(
+                          value: 'rename',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 20),
+                              SizedBox(width: 8),
+                              Text('Rename'),
+                            ],
+                          ),
+                        ),
+                      if (doc.document.userPermissions?['delete'] == 1)
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 20, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
