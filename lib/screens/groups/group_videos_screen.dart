@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:APHRC_COP/screens/messages/lottie.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../models/group_videos_model.dart';
+import '../../services/community_service.dart';
+import '../../services/shared_prefs_service.dart';
 import '../../services/token_preference.dart';
 import '../../utils/constants.dart';
 import '../../utils/show_error_dialog.dart';
@@ -26,6 +29,7 @@ class GroupVideos extends StatefulWidget {
 
 class _GroupVideosState extends State<GroupVideos> {
   String? _accessToken;
+  bool? _isGroupMember;
   bool _isLoading = false;
   bool _isLoadingUpload = false;
   bool _isLoadingSaveImage = false;
@@ -56,6 +60,31 @@ class _GroupVideosState extends State<GroupVideos> {
 
   Future<void> _init() async {
     await _fetchGroupVideos(widget.groupId);
+    await _getUserId();
+  }
+
+  Future<void> _getUserId() async {
+    if (!mounted) return;
+
+    try {
+      final userId = await SharedPrefsService.getUserId();
+      final token = await SharedPrefsService.getAccessToken();
+      CommunityService Community = new CommunityService();
+      final isMember = await Community.checkUserGroupMembership(token!, userId!, widget.groupId
+      );
+      if (mounted) {
+        setState(() {
+          _isGroupMember = isMember;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => 'Failed to check membership: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+      }
+    }
   }
 
   MediaType _getContentType(String filePath) {
@@ -72,7 +101,7 @@ class _GroupVideosState extends State<GroupVideos> {
       final thumbnailPath = await VideoThumbnail.thumbnailFile(
         video: videoFile.path,
         imageFormat: ImageFormat.JPEG,
-        maxHeight: 250, // You can customize this
+        maxHeight: 250,
         quality: 75,
       );
 
@@ -86,7 +115,6 @@ class _GroupVideosState extends State<GroupVideos> {
     }
   }
 
-
   Future<void> _fetchGroupVideos(int groupId) async {
     await _getAccessToken();
     try {
@@ -98,7 +126,7 @@ class _GroupVideosState extends State<GroupVideos> {
       }
 
       final response = await http.get(
-        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/activity?component=groups&primary_id=$groupId&type=activity_update'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/video?group_id=$groupId'),
         headers: {
           'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
@@ -114,7 +142,7 @@ class _GroupVideosState extends State<GroupVideos> {
           });
         } else {
           setState(() {
-            errorMessage = 'Failed to load activities: ${response.statusCode}';
+            errorMessage = 'Failed to load videos: ${response.statusCode}';
             _isLoading = false;
           });
         }
@@ -155,7 +183,7 @@ class _GroupVideosState extends State<GroupVideos> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$buddyBossApiUrl/wp-json/wp/v2/media'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/video/upload'),
       );
 
       request.headers['Authorization'] = 'Bearer $_accessToken';
@@ -173,11 +201,10 @@ class _GroupVideosState extends State<GroupVideos> {
       final responseData = await response.stream.bytesToString();
       final jsonData = json.decode(responseData);
 
-      print('Uploading response, $responseData');
       if (response.statusCode == 201) {
         _uploadNotifier.value = false;
         if (mounted) setState(() => _isLoadingUpload = false);
-        return {'id': jsonData['id']};
+        return {'id': jsonData['upload_id']};
       } else {
         _uploadNotifier.value = false;
         if (mounted) setState(() => _isLoadingUpload = false);
@@ -197,7 +224,7 @@ class _GroupVideosState extends State<GroupVideos> {
       'group_id': widget.groupId,
       'privacy': "public",
     };
-    _saveNotifier.value = true; // Start loading
+    _saveNotifier.value = true;
     if (mounted) {
       setState(() {
         _isLoadingSaveImage = true;
@@ -219,14 +246,14 @@ class _GroupVideosState extends State<GroupVideos> {
           await _fetchGroupVideos(widget.groupId);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Video uploaded successfully'),
               backgroundColor: Colors.green,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Unexpected error occurred'),
               backgroundColor: Colors.red,
             ),
@@ -240,15 +267,16 @@ class _GroupVideosState extends State<GroupVideos> {
           backgroundColor: Colors.red,
         ),
       );
-    }finally {
-      _saveNotifier.value = false; // Stop loading
-      if (mounted) setState(() {
-        _isLoadingSaveImage = false;
-        _selectedImage = null;
-        _uploaded = null;
-        _descriptionController.clear();
-      });
-      // Navigator.pop(context); // Close the bottom sheet
+    } finally {
+      _saveNotifier.value = false;
+      if (mounted) {
+        setState(() {
+          _isLoadingSaveImage = false;
+          _selectedImage = null;
+          _uploaded = null;
+          _descriptionController.clear();
+        });
+      }
     }
   }
 
@@ -277,7 +305,6 @@ class _GroupVideosState extends State<GroupVideos> {
       }
     }
   }
-
 
   void _showUploadBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -311,7 +338,7 @@ class _GroupVideosState extends State<GroupVideos> {
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                
+
                       if (_selectedImage != null) ...[
                         const SizedBox(height: 16),
                         LayoutBuilder(
@@ -340,7 +367,7 @@ class _GroupVideosState extends State<GroupVideos> {
                                       ),
                                     ),
                                   ),
-                
+
                                   if (!_isLoadingUpload)
                                     Positioned(
                                       top: 8,
@@ -364,7 +391,7 @@ class _GroupVideosState extends State<GroupVideos> {
                                         ),
                                       ),
                                     ),
-                
+
                                   if (_isLoadingUpload)
                                     Container(
                                       decoration: BoxDecoration(
@@ -376,11 +403,9 @@ class _GroupVideosState extends State<GroupVideos> {
                                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                         ),
                                       ),
-                
                                     ),
                                 ],
                               ),
-                
                             );
                           },
                         ),
@@ -440,7 +465,7 @@ class _GroupVideosState extends State<GroupVideos> {
                           ],
                         ),
                       ],
-                
+
                       if (_selectedImage != null) ...[
                         const SizedBox(height: 16),
                         SizedBox(
@@ -486,106 +511,217 @@ class _GroupVideosState extends State<GroupVideos> {
   }
 
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Group Videos'),
+        title: const Text('Community Videos'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : activities.every((a) => a.media.isEmpty)
-          ? LottieEmpty(title: 'Upload videos')
-          : _buildVideoGrid(),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : activities.isEmpty || activities.every((a) => a.media.url.isEmpty)
+              ? LottieEmpty(title: 'Upload videos')
+              : _buildVideoGrid(),
+          // Membership restriction message
+          if (_isGroupMember == false)
+            Positioned(
+              bottom: 80, // Positioned above the FAB
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.orange[100]?.withOpacity(0.9),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.group_off, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Only group members can upload videos',
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadBottomSheet(context),
-        backgroundColor: AppColors.aphrcGreen,
+        onPressed: _isGroupMember == true
+            ? () => _showUploadBottomSheet(context)
+            : null,
+        backgroundColor: _isGroupMember == true
+            ? AppColors.aphrcGreen
+            : Colors.grey[400],
         foregroundColor: Colors.white,
+        tooltip: _isGroupMember == true
+            ? 'Upload video'
+            : 'Join group to upload videos',
         child: const Icon(Icons.video_call),
       ),
     );
   }
 
   Widget _buildVideoGrid() {
-    final allMedia = activities.expand((activity) => activity.media).toList();
+    // Get unique group name (assuming activities has at least one item)
+    final groupName = activities.isNotEmpty ? activities.first.groupName : 'Group';
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: allMedia.length,
-      itemBuilder: (context, index) {
-        final media = allMedia[index];
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FullScreenVideo(videoUrl: media.url),
-              ),
-            );
-          },
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Image.network(
-                    media.thumb,
-                    fit: BoxFit.cover,
-                    headers: {
-                      'Authorization': 'Bearer $_accessToken',
-                    },
-                    errorBuilder: (context, error, stackTrace) =>
-                    const Center(child: Icon(Icons.broken_image)),
-                  ),
-                ),
-
-                // Video icon
-                const Positioned.fill(
-                  child: Center(
-                    child: Icon(
-                      Icons.play_circle_fill,
-                      size: 48,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
-
-                // Duration bar
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    color: Colors.black54,
-                    child: Text(
-                      media.duration,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                ),
-              ],
+    return Column(
+      children: [
+        // Group name badge (same style as photo grid)
+        Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width - 32, // 16px padding on each side
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.aphrcGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.aphrcGreen,
+              width: 1,
             ),
           ),
-        );
-      },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.group, size: 16, color: AppColors.aphrcGreen),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$groupName community videos',
+                  style: TextStyle(
+                    color: AppColors.aphrcGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Video grid
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: activities.length,
+            itemBuilder: (context, index) {
+              final activity = activities[index];
+              final media = activity.media;
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FullScreenVideo(
+                        videoUrl: media.url,
+                        userName: activity.userLogin,
+                        groupName: activity.groupName,
+                        downloadUrl: media.downloadUrl,
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Video thumbnail
+                      Positioned.fill(
+                        child: CachedNetworkImage(
+                          imageUrl: media.thumb,
+                          fit: BoxFit.cover,
+                          httpHeaders: {
+                            'Authorization': 'Bearer $_accessToken',
+                          },
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[200],
+                          ),
+                          errorWidget: (context, url, error) => const Center(
+                            child: Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+
+                      // Play icon overlay
+                      const Positioned.fill(
+                        child: Center(
+                          child: Icon(
+                            Icons.play_circle_fill,
+                            size: 48,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ),
+
+                      // Duration label
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.8),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                activity.userLogin,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                media.duration,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
-
 
   @override
   void dispose() {

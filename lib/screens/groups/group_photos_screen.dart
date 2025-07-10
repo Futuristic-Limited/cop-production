@@ -1,14 +1,18 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:APHRC_COP/screens/messages/lottie.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 
 import '../../models/group_photos_model.dart';
+import '../../services/community_service.dart';
+import '../../services/shared_prefs_service.dart';
 import '../../services/token_preference.dart';
 import '../../utils/constants.dart';
 import '../../utils/show_error_dialog.dart';
@@ -26,10 +30,11 @@ class GroupPhotos extends StatefulWidget {
 
 class _GroupPhotosState extends State<GroupPhotos> {
   String? _accessToken;
+  bool? _isGroupMember;
   bool _isLoading = false;
   bool _isLoadingUpload = false;
   bool _isLoadingSaveImage = false;
-  List<GroupActivity> activities = [];
+  List<GroupMedia> mediaList = [];
   String? errorMessage;
   File? _selectedImage;
   String? _uploaded;
@@ -55,6 +60,31 @@ class _GroupPhotosState extends State<GroupPhotos> {
 
   Future<void> _init() async {
     await _fetchGroupPhotos(widget.groupId);
+    await _getUserId();
+  }
+
+  Future<void> _getUserId() async {
+    if (!mounted) return;
+
+    try {
+      final userId = await SharedPrefsService.getUserId();
+      final token = await SharedPrefsService.getAccessToken();
+      CommunityService Community = new CommunityService();
+      final isMember = await Community.checkUserGroupMembership(token!, userId!, widget.groupId
+      );
+      if (mounted) {
+        setState(() {
+          _isGroupMember = isMember;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => 'Failed to check membership: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+      }
+    }
   }
 
   MediaType _getContentType(String filePath) {
@@ -77,7 +107,7 @@ class _GroupPhotosState extends State<GroupPhotos> {
       }
 
       final response = await http.get(
-        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/activity?component=groups&primary_id=$groupId&type=activity_update'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/media?group_id=$groupId'),
         headers: {
           'Authorization': 'Bearer $_accessToken',
           'Accept': 'application/json',
@@ -88,12 +118,12 @@ class _GroupPhotosState extends State<GroupPhotos> {
         if (response.statusCode == 200) {
           final List<dynamic> jsonData = jsonDecode(response.body);
           setState(() {
-            activities = jsonData.map((item) => GroupActivity.fromJson(item)).toList();
+            mediaList = jsonData.map((item) => GroupMedia.fromJson(item)).toList();
             _isLoading = false;
           });
         } else {
           setState(() {
-            errorMessage = 'Failed to load activities: ${response.statusCode}';
+            errorMessage = 'Failed to load photos: ${response.statusCode}';
             _isLoading = false;
           });
         }
@@ -134,7 +164,7 @@ class _GroupPhotosState extends State<GroupPhotos> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$buddyBossApiUrl/wp-json/wp/v2/media'),
+        Uri.parse('$buddyBossApiUrl/wp-json/buddyboss/v1/media/upload'),
       );
 
       request.headers['Authorization'] = 'Bearer $_accessToken';
@@ -155,7 +185,7 @@ class _GroupPhotosState extends State<GroupPhotos> {
       if (response.statusCode == 201) {
         _uploadNotifier.value = false;
         if (mounted) setState(() => _isLoadingUpload = false);
-        return {'id': jsonData['id']};
+        return {'id': jsonData['upload_id']};
       } else {
         _uploadNotifier.value = false;
         if (mounted) setState(() => _isLoadingUpload = false);
@@ -175,7 +205,7 @@ class _GroupPhotosState extends State<GroupPhotos> {
       'group_id': widget.groupId,
       'privacy': "public",
     };
-    _saveNotifier.value = true; // Start loading
+    _saveNotifier.value = true;
     if (mounted) {
       setState(() {
         _isLoadingSaveImage = true;
@@ -197,22 +227,22 @@ class _GroupPhotosState extends State<GroupPhotos> {
           await _fetchGroupPhotos(widget.groupId);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Photo uploaded successfully'),
               backgroundColor: Colors.green,
             ),
           );
-        } else if(response.statusCode == 403){
+        } else if (response.statusCode == 403) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('You are not a member of the group'),
               backgroundColor: Colors.red,
             ),
           );
-        }else{
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Unexpected error'),
+            const SnackBar(
+              content: Text('Unexpected error occurred'),
               backgroundColor: Colors.red,
             ),
           );
@@ -225,15 +255,16 @@ class _GroupPhotosState extends State<GroupPhotos> {
           backgroundColor: Colors.red,
         ),
       );
-    }finally {
-      _saveNotifier.value = false; // Stop loading
-      if (mounted) setState(() {
-        _isLoadingSaveImage = false;
-        _selectedImage = null;
-        _uploaded = null;
-        _descriptionController.clear();
-      });
-      // Navigator.pop(context); // Close the bottom sheet
+    } finally {
+      _saveNotifier.value = false;
+      if (mounted) {
+        setState(() {
+          _isLoadingSaveImage = false;
+          _selectedImage = null;
+          _uploaded = null;
+          _descriptionController.clear();
+        });
+      }
     }
   }
 
@@ -294,7 +325,6 @@ class _GroupPhotosState extends State<GroupPhotos> {
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                
                       if (_selectedImage != null) ...[
                         const SizedBox(height: 16),
                         LayoutBuilder(
@@ -312,7 +342,6 @@ class _GroupPhotosState extends State<GroupPhotos> {
                                       ),
                                     ),
                                   ),
-                
                                   if (!_isLoadingUpload)
                                     Positioned(
                                       top: 8,
@@ -332,12 +361,10 @@ class _GroupPhotosState extends State<GroupPhotos> {
                                           ),
                                           padding: const EdgeInsets.all(4),
                                           child: const Icon(Icons.close,
-                                              color: Colors.white,
-                                              size: 20),
+                                              color: Colors.white, size: 20),
                                         ),
                                       ),
                                     ),
-                
                                   if (_isLoadingUpload)
                                     Container(
                                       color: Colors.black54,
@@ -408,7 +435,6 @@ class _GroupPhotosState extends State<GroupPhotos> {
                           ],
                         ),
                       ],
-                
                       if (_selectedImage != null) ...[
                         const SizedBox(height: 16),
                         SizedBox(
@@ -457,86 +483,200 @@ class _GroupPhotosState extends State<GroupPhotos> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Group Photos'),
+        title: const Text('Community Photos'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : activities.every((a) => a.media.isEmpty)
-          ? LottieEmpty(title: 'Upload documents')
-          : _buildPhotoGrid(),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : mediaList.isEmpty
+              ? LottieEmpty(title: 'Upload photos')
+              : _buildPhotoGrid(),
+          // "Not a member" message overlay
+          if (_isGroupMember == false)
+            Positioned(
+              bottom: 70, // Position above FAB
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.orange[100]?.withOpacity(0.9),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.group_off, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Only community members can upload photos',
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadBottomSheet(context),
-        backgroundColor: AppColors.aphrcGreen,
+        onPressed: _isGroupMember == true
+            ? () => _showUploadBottomSheet(context)
+            : null,
+        backgroundColor: _isGroupMember == true
+            ? AppColors.aphrcGreen
+            : Colors.grey[400],
         foregroundColor: Colors.white,
+        tooltip: _isGroupMember == true
+            ? 'Upload photo'
+            : 'Join group to upload photos',
         child: const Icon(Icons.add_a_photo),
       ),
     );
   }
 
   Widget _buildPhotoGrid() {
-    final allMedia = activities
-        .expand((activity) => activity.media)
-        .toList();
+    final groupName = mediaList.isNotEmpty ? mediaList.first.groupName : 'Group';
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: allMedia.length,
-      itemBuilder: (context, index) {
-        final media = allMedia[index];
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FullScreenPhoto(imageUrl: media.url),
-              ),
-            );
-          },
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Stack(
-              children: [
-                Image.network(
-                  media.url,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.broken_image)),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    color: Colors.black54,
-                    child: Text(
-                      media.type,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
+    return Column(
+      children: [
+        // Group name badge (unchanged)
+        Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width - 32, // 16px padding on each side
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.aphrcGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.aphrcGreen,
+              width: 1,
             ),
           ),
-        );
-      },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.group, size: 16, color: AppColors.aphrcGreen),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$groupName community photos',
+                  style: TextStyle(
+                    color: AppColors.aphrcGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Photo grid with datetime fixes
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: mediaList.length,
+            itemBuilder: (context, index) {
+              final mediaItem = mediaList[index];
+              DateTime? parsedDate;
+
+              // Safely parse the date if it exists
+              parsedDate = DateTime.tryParse(mediaItem.dateCreated);
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenPhoto(
+                        imageUrl: mediaItem.media.url,
+                        userName: mediaItem.userLogin,
+                        groupName: mediaItem.groupName,
+                        downloadUrl: mediaItem.media.downloadUrl,
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl: mediaItem.media.thumb,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[200],
+                        ),
+                        errorWidget: (context, url, error) => const Center(
+                          child: Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.8),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                mediaItem.userLogin,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (parsedDate != null)
+                                Text(
+                                  DateFormat('MMM dd, yyyy').format(parsedDate),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

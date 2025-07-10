@@ -177,6 +177,36 @@ class CommunityService {
     }
   }
 
+
+
+  Future<bool?> checkUserGroupMembership(String token, String userId, int groupId) async {
+    final url = Uri.parse(
+      '${baseUrl}/groups/check/$groupId/$userId', // Fixed string interpolation
+    );
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      if (data != null && data['is_member'] != null) {
+        return data['is_member'] as bool; // Changed to bool
+      } else {
+        // is_member not found in response
+        return null;
+      }
+    } else {
+      // API call failed
+      throw Exception('Failed to fetch user membership: ${response.statusCode}');
+    }
+  }
+
   Future<List<int>> getJoinedGroupIds() async {
     final token = await _getToken();
     if (token == null) return [];
