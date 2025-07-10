@@ -5,7 +5,7 @@ import 'package:APHRC_COP/services/shared_prefs_service.dart';
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
 
-  const CustomAppBar({super.key, this.title = 'APHRC Community of Practice'});
+  const CustomAppBar({super.key, this.title = ''});
 
   @override
   State<CustomAppBar> createState() => _CustomAppBarState();
@@ -99,11 +99,28 @@ class _CustomAppBarState extends State<CustomAppBar> {
                           children: [
                             Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage: photoUrl.isNotEmpty
-                                      ? NetworkImage(photoUrl)
-                                      : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                                Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundImage: photoUrl.isNotEmpty
+                                          ? NetworkImage(photoUrl)
+                                          : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                                    ),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 1.5),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(width: 12),
                                 Column(
@@ -164,11 +181,11 @@ class _CustomAppBarState extends State<CustomAppBar> {
                         height: 40,
                         child: ListTile(
                           dense: true,
-                          leading: const Icon(Icons.settings, size: 20),
-                          title: const Text('Settings', style: TextStyle(fontSize: 14)),
+                          leading: const Icon(Icons.notification_add_rounded, size: 20),
+                          title: const Text('Notifications', style: TextStyle(fontSize: 14)),
                           onTap: () {
                             Navigator.pop(context);
-                            Navigator.pushNamed(context, '/settings');
+                            Navigator.pushNamed(context, '/notifications');
                           },
                         ),
                       ),

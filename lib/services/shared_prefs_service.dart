@@ -28,6 +28,21 @@ class SharedPrefsService {
     await prefs.setString('profile_photo_url', url);
     await prefs.setString('last_user_photo_url', url); // cached for next login
   }
+// Add near other save/get methods
+  static Future<void> saveUserPassword(String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_password', password);
+  }
+
+  static Future<String?> getUserPassword() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_password');
+  }
+
+  static Future<void> clearUserPassword() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_password');
+  }
 
   /// Save last user for "Continue as"
   static Future<void> saveLastUser({required String email, required String userName}) async {
@@ -129,7 +144,7 @@ class SharedPrefsService {
     await prefs.setBool('is_logged_in', false);
 
     ProfilePhotoNotifier.profilePhotoUrl.value = '';
-    // Do NOT clear last_user data here
+
   }
 
 

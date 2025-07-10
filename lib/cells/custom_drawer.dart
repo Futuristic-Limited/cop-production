@@ -114,7 +114,7 @@ class _CustomDrawerState extends State<CustomDrawer> with TickerProviderStateMix
   List<Widget> _buildLoggedInItems(BuildContext context) {
     return [
       _animatedDrawerItem(0, context, Icons.home, 'Home', '/home'),
-      _animatedDrawerItem(1, context, Icons.inbox, 'Messages', '/messages'),
+      // _animatedDrawerItem(1, context, Icons.inbox, 'Notifications', '/notifications'),
       _animatedDrawerItem(2, context, Icons.account_box, 'Account', '/home/account'),
       _animatedDrawerItem(3, context, Icons.settings, 'Tools', '/home/tools'),
       const SizedBox(height: 8),

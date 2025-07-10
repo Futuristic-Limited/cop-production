@@ -9,6 +9,7 @@ import 'package:APHRC_COP/screens/auth/forgot_password_screen.dart';
 import 'package:APHRC_COP/services/shared_prefs_service.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
 import 'package:APHRC_COP/notifiers/profile_photo_notifier.dart';
+import 'package:APHRC_COP/utils/network_checker.dart';
 
 
 final apiUrl = dotenv.env['BPI_URL'] ?? 'http://10.0.2.2:8000';
@@ -61,6 +62,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> loginUser(String email, String password) async {
+    final hasInternet = await NetworkChecker.hasConnection();
+
+    if (!hasInternet) {
+      Fluttertoast.showToast(
+        msg: "No Internet Connection.",
+        backgroundColor: Colors.grey,
+        textColor: Colors.white,
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     final url = Uri.parse('$apiUrl/log');
 
@@ -77,7 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200 && data['success'] == true) {
         Fluttertoast.showToast(msg: "Logging you in...");
 
-        // Save session data
         await SharedPrefsService.saveUserSession(
           accessToken: data['tokens']['access_token'] ?? '',
           refreshToken: data['tokens']['refresh_token'] ?? '',
@@ -87,38 +98,33 @@ class _LoginScreenState extends State<LoginScreen> {
           userId: data['user_id'].toString(),
           buddyBossToken: data['token'] ?? '',
         );
+        await SharedPrefsService.saveUserPassword(password);
 
-        // Save raw access token
         await SaveAccessTokenService.saveAccessToken(data['tokens']['access_token']);
-
-        // Fetch and cache profile photo before saving last user info
         await fetchAndCacheProfilePhoto();
 
-        // Save last user info (email, name, and avatar)
         await SharedPrefsService.saveLastUserInfo(
           userName: data['user_name'] ?? '',
           email: email,
           photoUrl: ProfilePhotoNotifier.profilePhotoUrl.value ?? '',
         );
 
-        // Generate and save BuddyBoss token if needed
         await generateAndSaveBuddyBossToken(email, password);
 
-        // Debugging tokens
-        print("Access Token (SharedPrefs): ${await SharedPrefsService.getAccessToken()}");
-        print("Access Token (SaveAccessTokenService): ${await SaveAccessTokenService.getAccessToken()}");
-
-        // Navigate to home page
-        Navigator.pushReplacementNamed(context, '/home');
-        // Navigator.pushReplacementNamed(context, '/activity/feeds');
+       Navigator.pushReplacementNamed(context, '/home');
+        //Navigator.pushReplacementNamed(context, '/activity/feeds');
       } else {
         Fluttertoast.showToast(
           msg: data['message'] ?? "Login Failed.",
           toastLength: Toast.LENGTH_LONG,
+          backgroundColor: Colors.grey,
         );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error in login: $e");
+      Fluttertoast.showToast(
+        msg: "Error in login: ${e.toString()}",
+        backgroundColor: Colors.grey,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -136,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       final photoUrl = jsonData['photo_url'];
-      print('Fetched profile photo URL: $photoUrl'); // <-- This prints the URL
+      print('Fetched profile photo URL: $photoUrl');
       if (photoUrl != null && photoUrl.toString().isNotEmpty) {
         await SharedPrefsService.saveProfilePhotoUrl(photoUrl);
         ProfilePhotoNotifier.profilePhotoUrl.value = photoUrl;
@@ -156,6 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final name = await SharedPrefsService.getLastUserName();
     final email = await SharedPrefsService.getLastUserEmail();
     final photo = await SharedPrefsService.getLastUserPhotoUrl();
+
 
     if (name != null && email != null) {
       setState(() {
@@ -221,14 +228,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () {
+                        onTap: () async {
+                          final savedPassword = await SharedPrefsService.getUserPassword();
                           setState(() {
                             emailTextController.text = _lastUserEmail!;
+                            passwordTextController.text = savedPassword ?? '';
                           });
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Email pre-filled. Please enter your password")),
+                            const SnackBar(
+                              content: Text("Email & password pre-filled. Just press Sign In."),
+                            ),
                           );
                         },
+
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(

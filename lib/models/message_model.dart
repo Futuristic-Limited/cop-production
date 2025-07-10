@@ -25,16 +25,16 @@ class MessageThread {
 
   factory MessageThread.fromJson(Map<String, dynamic> json) {
     return MessageThread(
-      threadId: json['thread_id'],
-      latestMessage: json['latest_message'],
-      latestSubject: json['latest_subject'],
-      senderId: json['sender_id'],
-      participantId: json['participant_id'],
-      participantName: json['participant_name'],
-      participantAvatar: json['participant_avatar'],
+      threadId: json['thread_id']?.toString() ?? '',
+      latestMessage: json['latest_message']?.toString() ?? '',
+      latestSubject: json['latest_subject']?.toString() ?? '',
+      senderId: json['sender_id']?.toString() ?? '',
+      participantId: json['participant_id']?.toString() ?? '',
+      participantName: json['participant_name']?.toString() ?? '',
+      participantAvatar: json['participant_avatar']?.toString(),
       unreadCount: int.tryParse(json['unread_count']?.toString() ?? '0') ?? 0,
-      latestDateSent: DateTime.parse(json['latest_date_sent']),
-      isYou: json['is_you'] == true || json['is_you'] == 'true',
+      latestDateSent: DateTime.tryParse(json['latest_date_sent']?.toString() ?? '') ?? DateTime.now(),
+      isYou: json['is_you'] == true || json['is_you']?.toString() == 'true',
     );
   }
 }
@@ -63,16 +63,16 @@ class Message {
   factory Message.fromJson(Map<String, dynamic> json) {
     var attachmentsJson = json['attachments'] as List<dynamic>? ?? [];
     List<Attachment> attachmentsList =
-        attachmentsJson.map((e) => Attachment.fromJson(e)).toList();
+    attachmentsJson.map((e) => Attachment.fromJson(e)).toList();
 
     return Message(
-      id: json['id'],
-      threadId: json['thread_id'],
-      senderId: json['sender_id'],
-      subject: json['subject'],
-      message: json['message'],
-      dateSent: json['date_sent'],
-      isDeleted: json['is_deleted'],
+      id: json['id']?.toString() ?? '',
+      threadId: json['thread_id']?.toString() ?? '',
+      senderId: json['sender_id']?.toString() ?? '',
+      subject: json['subject']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      dateSent: json['date_sent']?.toString() ?? '',
+      isDeleted: json['is_deleted']?.toString() ?? '0',
       attachments: attachmentsList,
     );
   }
@@ -97,12 +97,12 @@ class Attachment {
 
   factory Attachment.fromJson(Map<String, dynamic> json) {
     return Attachment(
-      id: json['id'],
-      type: json['type'],
-      title: json['title'],
-      previewUrl: json['preview_url'],
-      downloadUrl: json['download_url'],
-      mimeType: json['mime_type'],
+      id: json['id']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      previewUrl: json['preview_url']?.toString() ?? '',
+      downloadUrl: json['download_url']?.toString() ?? '',
+      mimeType: json['mime_type']?.toString() ?? '',
     );
   }
 }
@@ -122,10 +122,10 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['ID'].toString(), // Ensure it's treated as a string
-      fullName: json['full_name'] ?? '',
-      userEmail: json['user_email'] ?? '',
-      senderAvatar: json['sender_avatar'] ?? '',
+      id: json['ID']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      userEmail: json['user_email']?.toString() ?? '',
+      senderAvatar: json['sender_avatar']?.toString() ?? '',
     );
   }
 }
@@ -137,10 +137,13 @@ class UsersResponse {
   UsersResponse({required this.status, required this.users});
 
   factory UsersResponse.fromJson(Map<String, dynamic> json) {
-    var usersJson = json['users'] as List;
+    var usersJson = json['users'] as List<dynamic>? ?? [];
     List<User> userList = usersJson.map((u) => User.fromJson(u)).toList();
 
-    return UsersResponse(status: json['status'], users: userList);
+    return UsersResponse(
+      status: json['status']?.toString() ?? 'error',
+      users: userList,
+    );
   }
 }
 
@@ -161,11 +164,11 @@ class Invite {
 
   factory Invite.fromJson(Map<String, dynamic> json) {
     return Invite(
-      id: json['id'],
-      email: json['invitee_email'],
-      content: json['content'],
-      dateModified: json['date_modified'],
-      accepted: json['accepted'] == '1',
+      id: json['id']?.toString() ?? '',
+      email: json['invitee_email']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      dateModified: json['date_modified']?.toString() ?? '',
+      accepted: json['accepted'] == '1' || json['accepted'] == 1 || json['accepted'] == true,
     );
   }
 }
@@ -174,5 +177,16 @@ class UploadedAttachment {
   final int attachmentId;
   final int messageMetaId;
 
-  UploadedAttachment({required this.attachmentId, required this.messageMetaId});
+  UploadedAttachment({
+    required this.attachmentId,
+    required this.messageMetaId,
+  });
+
+  // Optional: Add .fromJson if needed
+  factory UploadedAttachment.fromJson(Map<String, dynamic> json) {
+    return UploadedAttachment(
+      attachmentId: int.tryParse(json['attachment_id']?.toString() ?? '0') ?? 0,
+      messageMetaId: int.tryParse(json['message_meta_id']?.toString() ?? '0') ?? 0,
+    );
+  }
 }

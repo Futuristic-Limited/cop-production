@@ -57,7 +57,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF79C148), // APHRC green
+      backgroundColor: const Color(0xFF79C148),
       body: Stack(
         children: [
           const BubbleBackground(),

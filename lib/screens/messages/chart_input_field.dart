@@ -162,18 +162,14 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _isUploading = true;
       });
 
-      final url = Uri.parse('${apiUrl}wp-json/wp/v2/media');
-      final contentType = _getContentType(file.path);
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${apiUrl}wp-json/wp/v2/media'),
+      );
 
-      print("Uploading file to: $url");
-      print("File path: ${file.path}");
-      print("Content type: $contentType");
-      print("Authorization token: $_ciAccessToken");
-
-      var request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $_ciAccessToken';
-      request.headers['Content-Disposition'] = 'attachment; filename="${file.path.split('/').last}"';
-      request.headers['Content-Type'] = contentType.toString();
+
+      final contentType = _getContentType(file.path);
 
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -184,21 +180,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
       );
 
       final response = await request.send();
-      print("Response status: ${response.statusCode}");
-
-      final responseData = await response.stream.bytesToString();
-      print("Response body: $responseData");
-
-      setState(() {
-        _isUploading = false;
-      });
-
       if (response.statusCode == 201) {
+        setState(() {
+          _isUploading = false;
+        });
+        final responseData = await response.stream.bytesToString();
         final jsonData = json.decode(responseData);
         return {'id': jsonData['id']};
-      } else {
-        // Print details if the upload failed
-        print("Upload failed with status ${response.statusCode}");
       }
 
       return null;
@@ -211,7 +199,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
-
   Future<void> _uploadAndAdd(File file) async {
     final result = await _uploadMedia(file);
     if (!mounted) return; // avoid setState after dispose
@@ -222,7 +209,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
       });
     } else {
       if (!mounted) return;
-      await _showErrorDialog('Failed to upload the file.');
+      await _showErrorDialog('Failed to upload ${file.path.split('/').last}.');
     }
   }
 

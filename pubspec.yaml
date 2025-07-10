@@ -52,6 +52,8 @@ dependencies:
   badges: ^3.1.1
   dio: ^5.4.0
   flutter_pdfview: ^1.2.1
+  connectivity_plus: ^6.0.2
+  onesignal_flutter: ^5.1.0
 
 
   # gallery_saver: any
