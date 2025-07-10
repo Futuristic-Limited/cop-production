@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:APHRC_COP/screens/activity/attacment-preview.dart';
 import 'package:APHRC_COP/screens/activity/video-thumbnail.dart';
 import 'package:APHRC_COP/services/token_preference.dart';
@@ -13,7 +12,6 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/activity_item_model.dart';
 import '../../services/shared_prefs_service.dart';
 import '../../utils/constants.dart';
@@ -45,7 +43,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     super.initState();
     _loadData();
     _getAccessToken();
-
 
     SharedPrefsService.getUserId().then((value) {
       setState(() {

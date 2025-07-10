@@ -61,9 +61,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
         setState(() {
           threads =
               threads =
-                  threadList
-                      .map((json) => MessageThread.fromJson(json))
-                      .toList();
+              threadList
+                  .map((json) => MessageThread.fromJson(json))
+                  .toList();
           user = userIdStr;
           isLoading = false;
         });
@@ -81,102 +81,102 @@ class _MessagesScreenState extends State<MessagesScreen> {
     }
   }
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Messages')),
       body:
-          isLoading
-              ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromARGB(255, 28, 196, 107),
+      isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Color.fromARGB(255, 28, 196, 107),
+          ),
+        ),
+      )
+          : errorMessage != null
+          ? Center(child: Text(errorMessage!))
+          : threads.isEmpty
+          ? LottieEmpty(title: 'Start a conversation!')
+          : ListView.builder(
+        itemCount: threads.length,
+        itemBuilder: (context, index) {
+          final thread = threads[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: NetworkImage(
+                thread.participantAvatar ?? '',
+              ),
+            ),
+            title: Text(capitalizeFirstLetter(thread.participantName)),
+            subtitle: Text(
+              stripHtmlWithEmojis(thread.latestMessage),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatTime(thread.latestDateSent),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.green,
                   ),
                 ),
-              )
-              : errorMessage != null
-              ? Center(child: Text(errorMessage!))
-              : threads.isEmpty
-              ? LottieEmpty(title: 'Start a conversation!')
-              : ListView.builder(
-                itemCount: threads.length,
-                itemBuilder: (context, index) {
-                  final thread = threads[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(
-                        thread.participantAvatar ?? '',
+                const SizedBox(height: 4),
+                if (thread.unreadCount > 0)
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        thread.unreadCount.toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    title: Text(capitalizeFirstLetter(thread.participantName)),
-                    subtitle: Text(
-                      stripHtmlWithEmojis(thread.latestMessage),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatTime(thread.latestDateSent),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (thread.unreadCount > 0)
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Text(
-                                thread.unreadCount.toString(),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    onTap: () async {
-                      final currentUserId =
-                          await SharedPrefsService.getUserId();
+                  ),
+              ],
+            ),
+            onTap: () async {
+              final currentUserId =
+              await SharedPrefsService.getUserId();
 
-                      int otherUserId;
-                      if (thread.participantId == currentUserId.toString()) {
-                        otherUserId = int.parse(thread.senderId);
-                      } else {
-                        otherUserId = int.parse(thread.participantId);
-                      }
+              int otherUserId;
+              if (thread.participantId == currentUserId.toString()) {
+                otherUserId = int.parse(thread.senderId);
+              } else {
+                otherUserId = int.parse(thread.participantId);
+              }
 
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => BuddyBossThreadScreen(
-                                threadId: int.parse(thread.threadId),
-                                userId: otherUserId,
-                                userName: thread.participantName,
-                                profilePicture: thread.participantAvatar ?? '',
-                              ),
-                        ),
-                      );
-                      if (result == 'refresh') {
-                        // Refresh the inbox if the user sent a new message
-                        fetchInbox();
-                      }
-                    },
-                  );
-                },
-              ),
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => BuddyBossThreadScreen(
+                    threadId: int.parse(thread.threadId),
+                    userId: otherUserId,
+                    userName: thread.participantName,
+                    profilePicture: thread.participantAvatar ?? '',
+                  ),
+                ),
+              );
+              if (result == 'refresh') {
+                // Refresh the inbox if the user sent a new message
+                fetchInbox();
+              }
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
         child: const Icon(Icons.message, color: Colors.white),
@@ -186,7 +186,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             MaterialPageRoute(
               builder:
                   (context) =>
-                      const NewMessageScreen(title: 'New Conversation'),
+              const NewMessageScreen(title: 'New Conversation'),
             ),
           );
         },
