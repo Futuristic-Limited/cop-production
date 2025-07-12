@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../screens/discussions/index.dart';
 import 'group_side_menu.dart';
 
@@ -36,16 +37,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWideScreen = screenWidth >= 768;
-
     return Scaffold(
-      //drawer: _buildSideMenu(),
       drawer: GroupSideMenu(
         group: widget.group,
         selectedIndex: _selectedIndex,
         onTabSelected: _switchTab,
       ),
       appBar: AppBar(
-        title: const Text('Community Detail View'),
+        title: Text(widget.group['name'] ?? 'Community Detail'),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -63,66 +62,209 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   Widget _buildAboutSection() {
     final name = widget.group['name'] ?? 'Untitled Group';
     final description = widget.group['description'];
-
     final descriptionText = description is Map<String, dynamic>
         ? description['rendered'] ?? 'No description available.'
         : (description ?? 'No description available.');
+    final membersCount = widget.group['members_count'] ?? '0';
+    final status = widget.group['status'] ?? 'public';
+    final role = widget.group['role'] ?? '';
+    final isMember = widget.group['is_member'] ?? false;
 
-    // Access avatarUrl directly from the group map
-    final imageUrl = widget.group['avatarUrl'] as String?;
-
-    final createdAt = widget.group['dateCreated'] ?? '';
-    final category = widget.group['category'] ?? '';
+    final coverImageHeight = MediaQuery.of(context).size.height * 0.25;
+    const cardOverlap = 60.0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage:
-                (imageUrl != null && imageUrl.isNotEmpty)
-                    ? NetworkImage(imageUrl)
-                    : null,
-                backgroundColor: Colors.green.shade300,
-                child: (imageUrl == null || imageUrl.isEmpty)
-                    ? const Icon(Icons.group, size: 40, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold),
+          // Cover Image at the top (25% of screen height)
+          Container(
+            height: coverImageHeight,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: CachedNetworkImageProvider(
+                  widget.group['cover_url'] ??
+                      'https://upload.wikimedia.org/wikipedia/commons/3/3f/Placeholder_view_vector.svg',
                 ),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+          // Content with overlapping card
+          Column(
+            children: [
+              // Empty space for the cover image (minus the overlap)
+              SizedBox(height: coverImageHeight - cardOverlap),
+
+              // Main content area
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // First Card with group info
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Card(
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Top Row with Avatar and Basic Info
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Group Avatar
+                                CircleAvatar(
+                                  radius: 40,
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    widget.group['avatar_urls']['thumb'] ??
+                                        'https://via.placeholder.com/150',
+                                  ),
+                                  backgroundColor: Colors.grey.shade300,
+                                ),
+                                const SizedBox(width: 16),
+                                // Group Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        children: [
+                                          _buildInfoChip(
+                                            icon: Icons.people_outline,
+                                            text: '$membersCount ${widget.group['plural_role'] ?? 'Members'}',
+                                          ),
+                                          _buildInfoChip(
+                                            icon: status == 'public' ? Icons.public : Icons.lock_outline,
+                                            text: status,
+                                          ),
+                                          if (isMember)
+                                            Chip(
+                                              label: Text(
+                                                role,
+                                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                              ),
+                                              backgroundColor: _aphrcGreen,
+                                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Description Section (no card)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'About',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Html(
+                          data: descriptionText,
+                          style: {
+                            "body": Style(
+                              fontSize: FontSize(16.0),
+                              color: Colors.black87,
+                              margin: Margins.zero,
+                            ),
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (category.isNotEmpty || createdAt.isNotEmpty)
-            Row(
-              children: [
-                if (category.isNotEmpty)
-                  Chip(
-                    label: Text(category),
-                    backgroundColor: Colors.blue.shade50,
-                  ),
-                if (category.isNotEmpty && createdAt.isNotEmpty)
-                  const SizedBox(width: 8),
-                if (createdAt.isNotEmpty)
-                  Text(
-                    'Created on: $createdAt',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-              ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String text}) {
+    return Chip(
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+      backgroundColor: Colors.grey[200],
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[800],
             ),
-          const SizedBox(height: 20),
-          Html(data: descriptionText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: _aphrcGreen),
+          const SizedBox(width: 12),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontSize: 14,
+                ),
+                children: [
+                  TextSpan(
+                    text: '$label: ',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: value),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -130,9 +272,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildDiscussionSection(bool isWideScreen) {
     final groupSlug = widget.group['slug'] ?? 'default-group';
-    final groupId = widget.group['groupId'] ?? '20';
+    final groupId = widget.group['id']?.toString() ?? '20';
     final group = widget.group;
-    return DiscussionsScreen(groupd: groupSlug, groupId: groupId, groupDetails: group);
+    return DiscussionsScreen(
+      groupd: groupSlug,
+      groupId: groupId,
+      groupDetails: group,
+    );
   }
 
   Widget _buildFilesSection() {
@@ -141,10 +287,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             ['Course Notes.pdf', 'Group Charter.docx'];
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemCount: files.length,
       itemBuilder: (_, i) => Card(
         elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.symmetric(vertical: 4),
         child: ListTile(
           leading: const Icon(Icons.insert_drive_file, color: Colors.blue),
           title: Text(files[i]),
@@ -163,97 +313,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     );
   }
 
-
-
-
-
-
-  // Widget _buildSideMenu() {
-  //   return Drawer(
-  //     child: SafeArea(
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.stretch,
-  //         children: [
-  //           const DrawerHeader(
-  //             child: Text(
-  //               'Menu',
-  //               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-  //             ),
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.home,
-  //             text: 'Home',
-  //             index: 0,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushNamed(context, '/home');
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.forum,
-  //             text: 'Discussions',
-  //             index: 1,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushNamed(
-  //                 context,
-  //                 '/groups/discussions',
-  //                 arguments: {'slug': widget.group['slug']},
-  //               );
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.people,
-  //             text: 'Members',
-  //             index: 2,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushNamed(
-  //                 context,
-  //                 '/groups/members',
-  //                 arguments: {'groupId': widget.group['id']},
-  //               );
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.folder,
-  //             text: 'Files',
-  //             index: 3,
-  //             onTap: () => _switchTab(3),
-  //           ),
-  //           const Divider(),
-  //           _buildMenuItem(
-  //             icon: Icons.person,
-  //             text: 'Profile',
-  //             index: 4,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushNamed(context, '/profile');
-  //             },
-  //           ),
-  //           _buildMenuItem(
-  //             icon: Icons.group,
-  //             text: 'Groups',
-  //             index: 5,
-  //             onTap: () {
-  //               Navigator.of(context).pop();
-  //               Navigator.pushNamed(context, '/groups');
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-
-
-
-
-
-
-
-
   void _switchTab(int index) {
     Navigator.of(context).pop();
     setState(() {
@@ -261,38 +320,4 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       _tabController.index = index;
     });
   }
-
-  // Widget _buildMenuItem({
-  //   required IconData icon,
-  //   required String text,
-  //   required int index,
-  //   required VoidCallback onTap,
-  // }) {
-  //   final isSelected = (index == _selectedIndex);
-  //
-  //   return ListTile(
-  //     selected: isSelected,
-  //     onTap: onTap,
-  //     title: Row(
-  //       children: [
-  //         Icon(
-  //           icon,
-  //           color: _aphrcGreen,
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: Text(
-  //             text,
-  //             style: TextStyle(
-  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-  //               color: Colors.black,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-
 }
